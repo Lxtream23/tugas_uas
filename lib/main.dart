@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/login_page.dart';
+import 'package:tugas_uas/pages/register_page.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -16,7 +17,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       initialRoute: '/login',
-      routes: {'/login': (_) => const LoginPage()},
+      routes: {
+        '/login': (_) => const LoginPage(),
+        '/register': (_) => const RegisterPage(),
+      },
     );
   }
 }
