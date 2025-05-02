@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/pages/home_page.dart';
 import 'package:tugas_uas/pages/login_page.dart';
 import 'package:tugas_uas/pages/register_page.dart';
 
@@ -20,6 +21,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
+        '/home': (_) => const HomePage(),
       },
     );
   }
