@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/services/supabase_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -9,6 +10,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final supabaseService = SupabaseService();
   final supabase = Supabase.instance.client;
   List<dynamic> diaryEntries = [];
   bool isLoading = true;
@@ -17,6 +19,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _fetchDiaryEntries();
+  }
+
+  void fetchData() async {
+    final entries = await supabaseService.getDiaryEntries();
+    setState(() {
+      diaryEntries = entries;
+    });
   }
 
   Future<void> _fetchDiaryEntries() async {
