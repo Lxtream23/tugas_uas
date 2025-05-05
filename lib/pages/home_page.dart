@@ -69,11 +69,15 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _goToDetail(Map entry) {
+  void _goToDetail(DiaryEntry entry) {
     Navigator.pushNamed(context, '/detail', arguments: entry).then((_) {
       // Refresh list saat kembali dari detail
       _fetchDiaryEntries();
     });
+  }
+
+  void _goToSettings() {
+    Navigator.pushNamed(context, '/settings');
   }
 
   @override
@@ -82,7 +86,14 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Catatan Harian'),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _goToSettings,
+          ), // Arahkan ke SettingsPage
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ), // Arahkan ke halaman login
         ],
       ),
       body: Column(

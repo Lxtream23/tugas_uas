@@ -6,6 +6,7 @@ import 'package:tugas_uas/pages/home_page.dart';
 import 'package:tugas_uas/pages/login_page.dart';
 import 'package:tugas_uas/pages/register_page.dart';
 import 'package:tugas_uas/pages/splash_page.dart';
+import 'package:tugas_uas/pages/settings_page.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         '/register': (_) => const RegisterPage(),
         '/home': (_) => const SessionGuard(child: HomePage()),
         '/detail': (context) => const SessionGuard(child: DetailPage()),
+        '/settings': (context) => const SessionGuard(child: SettingsPage()),
       },
     );
   }
