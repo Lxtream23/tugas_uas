@@ -25,26 +25,33 @@ class _HomePageState extends State<HomePage> {
     _searchController.addListener(_filterDiaryEntries);
   }
 
-  void fetchData() async {
-    final entries = await supabaseService.getDiaryEntries();
-    setState(() {
-      diaryEntries = entries;
-    });
-  }
+  //void fetchData() async {
+  //  final entries = await supabaseService.getDiaryEntries();
+  //  setState(() {
+  //    diaryEntries = entries;
+  //  });
+  // }
 
   Future<void> _fetchDiaryEntries() async {
     final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      // Jika user tidak terautentikasi, arahkan ke halaman login
+      Navigator.pushReplacementNamed(context, '/login');
+      return;
+    }
 
     final response = await supabase
         .from('diary_entries')
         .select()
-        .eq('user_id', userId)
+        .eq('user_id', userId!)
         .order('created_at', ascending: false);
+
+    final List<dynamic> data = response;
 
     setState(() {
       diaryEntries =
-          (response as List<dynamic>)
-              .map((entry) => DiaryEntry.fromMap(entry))
+          data
+              .map((item) => DiaryEntry.fromMap(item as Map<String, dynamic>))
               .toList();
       filteredEntries = List.from(diaryEntries);
       isLoading = false;
@@ -63,6 +70,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _logout() async {
+    setState(() => isLoading = true);
     await supabase.auth.signOut();
     if (mounted) {
       Navigator.pushReplacementNamed(context, '/login');

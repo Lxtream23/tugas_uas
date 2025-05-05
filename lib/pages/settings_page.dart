@@ -30,7 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
     if (user != null) {
       setState(() {
         _emailController.text = user.email ?? '';
-        _usernameController.text = user.userMetadata['username'] ?? '';
+        _usernameController.text = user.userMetadata?['username'] ?? '';
       });
     }
   }
