@@ -22,6 +22,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Catatan Harian',
+      theme: ThemeData.light(), // Tema terang
+      darkTheme: ThemeData.dark(), // Tema gelap
+      themeMode:
+          ThemeMode.system, // Mengikuti pengaturan sistem (gelap atau terang)
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashPage(),
