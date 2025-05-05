@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/guards/session_guard.dart';
 import 'package:tugas_uas/pages/detail_page.dart';
 import 'package:tugas_uas/pages/home_page.dart';
 import 'package:tugas_uas/pages/login_page.dart';
@@ -22,8 +23,8 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
-        '/home': (_) => const HomePage(),
-        '/detail': (_) => const DetailPage(),
+        '/home': (_) => const SessionGuard(child: HomePage()),
+        '/detail': (context) => const SessionGuard(child: DetailPage()),
       },
     );
   }
