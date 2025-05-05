@@ -5,6 +5,7 @@ import 'package:tugas_uas/pages/detail_page.dart';
 import 'package:tugas_uas/pages/home_page.dart';
 import 'package:tugas_uas/pages/login_page.dart';
 import 'package:tugas_uas/pages/register_page.dart';
+import 'package:tugas_uas/pages/splash_page.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -19,8 +20,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/login',
+      debugShowCheckedModeBanner: false,
+      title: 'Catatan Harian',
+      initialRoute: '/',
       routes: {
+        '/': (_) => const SplashPage(),
         '/login': (_) => const LoginPage(),
         '/register': (_) => const RegisterPage(),
         '/home': (_) => const SessionGuard(child: HomePage()),
