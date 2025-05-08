@@ -95,6 +95,12 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Catatan Harian'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile-form');
+            },
+          ), // Arahkan ke ProfileFormPage
+          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _goToSettings,
           ), // Arahkan ke SettingsPage
