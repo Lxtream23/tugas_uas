@@ -77,20 +77,27 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _goToDetail(DiaryEntry entry) {
-    Navigator.pushNamed(
-      context,
-      '/detail',
-      arguments: {
-        'id': entry.id,
-        'title': entry.title,
-        'content': entry.content,
-        'created_at': entry.createdAt.toIso8601String(),
-      },
-    ).then((_) {
-      // Refresh list saat kembali dari detail
-      _fetchDiaryEntries();
-    });
+  void _goToDetail(DiaryEntry? entry) {
+    if (entry == null) {
+      // Tambah baru
+      Navigator.pushNamed(context, '/detail').then((_) {
+        _fetchDiaryEntries();
+      });
+    } else {
+      // Edit
+      Navigator.pushNamed(
+        context,
+        '/detail',
+        arguments: {
+          'id': entry.id,
+          'title': entry.title,
+          'content': entry.content,
+          'created_at': entry.createdAt.toIso8601String(),
+        },
+      ).then((_) {
+        _fetchDiaryEntries();
+      });
+    }
   }
 
   void _goToSettings() {
@@ -161,15 +168,7 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed:
-            () => _goToDetail(
-              DiaryEntry(
-                id: '',
-                userId: '',
-                title: '',
-                content: '',
-                createdAt: DateTime.now(),
-              ),
-            ), // Entry kosong untuk catatan baru
+            () => _goToDetail(null), // kirim null untuk tambah catatan baru
         child: const Icon(Icons.add),
       ),
     );
