@@ -78,7 +78,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _goToDetail(DiaryEntry entry) {
-    Navigator.pushNamed(context, '/detail', arguments: entry).then((_) {
+    Navigator.pushNamed(
+      context,
+      '/detail',
+      arguments: {
+        'id': entry.id,
+        'title': entry.title,
+        'content': entry.content,
+        'created_at': entry.createdAt.toIso8601String(),
+      },
+    ).then((_) {
       // Refresh list saat kembali dari detail
       _fetchDiaryEntries();
     });
