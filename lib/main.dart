@@ -4,6 +4,7 @@ import 'package:tugas_uas/guards/session_guard.dart';
 import 'package:tugas_uas/pages/detail_page.dart';
 import 'package:tugas_uas/pages/home_page.dart';
 import 'package:tugas_uas/pages/login_page.dart';
+import 'package:tugas_uas/pages/profile_form_page.dart';
 import 'package:tugas_uas/pages/register_page.dart';
 import 'package:tugas_uas/pages/splash_page.dart';
 import 'package:tugas_uas/pages/settings_page.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/home': (_) => const SessionGuard(child: HomePage()),
         '/detail': (context) => const SessionGuard(child: DetailPage()),
         '/settings': (context) => const SessionGuard(child: SettingsPage()),
+        '/profile-form': (_) => const SessionGuard(child: ProfileFormPage()),
       },
     );
   }
