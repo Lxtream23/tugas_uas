@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileFormPage extends StatefulWidget {
@@ -18,6 +20,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   final _alamatController = TextEditingController();
   final _statusController = TextEditingController();
 
+  String? _fotoUrl;
   bool _isLoading = false;
 
   Future<void> _submit() async {
@@ -36,7 +39,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         'tempat_tanggal_lahir': _ttlController.text.trim(),
         'alamat': _alamatController.text.trim(),
         'status': _statusController.text.trim(),
-        'foto_profil': '', // kosong dulu, nanti bisa diisi lewat upload
+        'foto_profil': _fotoUrl ?? '',
       };
 
       await _supabase.from('user_profiles').upsert(data);
@@ -45,7 +48,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profil berhasil disimpan')),
         );
-        Navigator.pop(context); // Kembali ke halaman sebelumnya
+        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(
@@ -53,6 +56,43 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
     } finally {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _uploadFotoProfil() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked == null) return;
+
+    final file = File(picked.path);
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    final fileExt = picked.path.split('.').last;
+    final filePath = 'avatars/${user.id}.$fileExt';
+
+    try {
+      // Upload ke Storage Supabase
+      await _supabase.storage
+          .from('avatars')
+          .upload(filePath, file, fileOptions: const FileOptions(upsert: true));
+
+      final publicUrl = _supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+      setState(() {
+        _fotoUrl = publicUrl;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto profil berhasil diunggah')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal upload foto: $e')));
     }
   }
 
@@ -76,6 +116,22 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           key: _formKey,
           child: ListView(
             children: [
+              if (_fotoUrl != null)
+                Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 48,
+                      backgroundImage: NetworkImage(_fotoUrl!),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ElevatedButton.icon(
+                onPressed: _uploadFotoProfil,
+                icon: const Icon(Icons.image),
+                label: const Text('Unggah Foto Profil'),
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
