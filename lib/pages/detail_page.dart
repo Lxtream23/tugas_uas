@@ -87,6 +87,41 @@ class _DetailPageState extends State<DetailPage> {
     //print('[DEBUG] Updating ID: ${_entry?['id']}');
   }
 
+  Future<void> _deleteEntry() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (_) => AlertDialog(
+            title: const Text('Hapus Catatan'),
+            content: const Text('Yakin ingin menghapus catatan ini?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Hapus'),
+              ),
+            ],
+          ),
+    );
+
+    if (confirm != true) return;
+
+    final id = _entry?['id'];
+    if (id == null) return;
+
+    try {
+      await supabase.from('diary_entries').delete().eq('id', id);
+      if (mounted) Navigator.pop(context); // kembali ke halaman sebelumnya
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -99,6 +134,14 @@ class _DetailPageState extends State<DetailPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
+        actions: [
+          if (_entry != null)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              tooltip: 'Hapus',
+              onPressed: _deleteEntry,
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
