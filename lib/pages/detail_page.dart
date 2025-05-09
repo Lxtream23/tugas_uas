@@ -53,7 +53,7 @@ class _DetailPageState extends State<DetailPage> {
 
     try {
       if (_entry == null) {
-        // Buat entry baru
+        // Tambah catatan baru
         await supabase.from('diary_entries').insert({
           'user_id': user.id,
           'title': title,
@@ -61,11 +61,20 @@ class _DetailPageState extends State<DetailPage> {
           'created_at': DateTime.now().toIso8601String(),
         });
       } else {
-        // Update entry lama
+        // Edit catatan
+        final id = _entry?['id'];
+        if (id == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ID catatan tidak ditemukan.')),
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+
         await supabase
             .from('diary_entries')
             .update({'title': title, 'content': content})
-            .eq('id', _entry!['id']);
+            .eq('id', id);
       }
 
       if (mounted) Navigator.pop(context);
@@ -75,6 +84,7 @@ class _DetailPageState extends State<DetailPage> {
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menyimpan catatan: $e')));
     }
+    //print('[DEBUG] Updating ID: ${_entry?['id']}');
   }
 
   @override
