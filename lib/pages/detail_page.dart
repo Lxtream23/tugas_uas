@@ -14,6 +14,7 @@ class _DetailPageState extends State<DetailPage> {
   final supabase = Supabase.instance.client;
   bool _isLoading = false;
   Map? _entry;
+  Map<String, dynamic>? _lastDeletedEntry;
 
   @override
   void didChangeDependencies() {
@@ -53,7 +54,7 @@ class _DetailPageState extends State<DetailPage> {
 
     try {
       if (_entry == null) {
-        // Tambah catatan baru
+        // Tambah baru
         await supabase.from('diary_entries').insert({
           'user_id': user.id,
           'title': title,
@@ -61,7 +62,7 @@ class _DetailPageState extends State<DetailPage> {
           'created_at': DateTime.now().toIso8601String(),
         });
       } else {
-        // Edit catatan
+        // Perbarui
         final id = _entry?['id'];
         if (id == null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -77,14 +78,14 @@ class _DetailPageState extends State<DetailPage> {
             .eq('id', id);
       }
 
-      if (mounted) Navigator.pop(context);
+      if (mounted)
+        Navigator.pop(context, true); // kembali ke halaman sebelumnya
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menyimpan catatan: $e')));
     }
-    //print('[DEBUG] Updating ID: ${_entry?['id']}');
   }
 
   Future<void> _deleteEntry() async {
@@ -113,12 +114,50 @@ class _DetailPageState extends State<DetailPage> {
     if (id == null) return;
 
     try {
+      _lastDeletedEntry = Map<String, dynamic>.from(_entry!);
       await supabase.from('diary_entries').delete().eq('id', id);
-      if (mounted) Navigator.pop(context); // kembali ke halaman sebelumnya
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Catatan dihapus'),
+            action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+
+        Navigator.pop(context, true); // kembali ke halaman sebelumnya
+      }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
+    }
+  }
+
+  Future<void> _undoDelete() async {
+    final userId = supabase.auth.currentUser?.id;
+
+    if (_lastDeletedEntry == null || userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal undo: pengguna tidak ditemukan')),
+      );
+      return;
+    }
+
+    try {
+      await supabase.from('diary_entries').insert({
+        'user_id': userId,
+        'title': _lastDeletedEntry!['title'],
+        'content': _lastDeletedEntry!['content'],
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      _lastDeletedEntry = null;
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengembalikan catatan: $e')),
+      );
     }
   }
 

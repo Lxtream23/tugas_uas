@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tugas_uas/services/supabase_service.dart';
-import 'package:tugas_uas/models/diary_entry.dart';
+import '../models/diary_entry.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,56 +10,53 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final supabaseService = SupabaseService();
   final supabase = Supabase.instance.client;
   List<DiaryEntry> diaryEntries = [];
   List<DiaryEntry> filteredEntries = [];
+  final _searchController = TextEditingController();
   bool isLoading = true;
-  final TextEditingController _searchController = TextEditingController();
+  DiaryEntry? _lastDeletedEntry;
 
   @override
   void initState() {
     super.initState();
     _fetchDiaryEntries();
-    _searchController.addListener(_filterDiaryEntries);
+    _searchController.addListener(_onSearchChanged);
   }
 
-  //void fetchData() async {
-  //  final entries = await supabaseService.getDiaryEntries();
-  //  setState(() {
-  //    diaryEntries = entries;
-  //  });
-  // }
-
   Future<void> _fetchDiaryEntries() async {
+    if (!mounted) return;
+    setState(() => isLoading = true);
+
     final userId = supabase.auth.currentUser?.id;
     if (userId == null) {
-      // Jika user tidak terautentikasi, arahkan ke halaman login
-      Navigator.pushReplacementNamed(context, '/login');
+      if (!mounted) return;
+      setState(() {
+        isLoading = false;
+        diaryEntries = [];
+        filteredEntries = [];
+      });
       return;
     }
 
     final response = await supabase
         .from('diary_entries')
         .select()
-        .eq('user_id', userId!)
+        .eq('user_id', userId)
         .order('created_at', ascending: false);
 
-    final List<dynamic> data = response;
+    final data = List<Map<String, dynamic>>.from(response);
 
+    if (!mounted) return;
     setState(() {
-      diaryEntries =
-          data
-              .map((item) => DiaryEntry.fromMap(item as Map<String, dynamic>))
-              .toList();
-      filteredEntries = List.from(diaryEntries);
+      diaryEntries = data.map((e) => DiaryEntry.fromMap(e)).toList();
+      filteredEntries = diaryEntries;
       isLoading = false;
     });
   }
 
-  void _filterDiaryEntries() {
+  void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
-
     setState(() {
       filteredEntries =
           diaryEntries
@@ -69,81 +65,81 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> _logout() async {
-    setState(() => isLoading = true);
-    await supabase.auth.signOut();
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
-  }
-
   void _goToDetail(DiaryEntry? entry) {
-    if (entry == null) {
-      // Tambah baru
-      Navigator.pushNamed(context, '/detail').then((_) {
+    final args =
+        entry == null
+            ? null
+            : {
+              'id': entry.id,
+              'title': entry.title,
+              'content': entry.content,
+              'created_at': entry.createdAt.toIso8601String(),
+            };
+
+    Navigator.pushNamed(context, '/detail', arguments: args).then((
+      result,
+    ) async {
+      if (result == true) {
+        await Future.delayed(const Duration(milliseconds: 300));
         _fetchDiaryEntries();
-      });
-    } else {
-      // Edit
-      Navigator.pushNamed(
-        context,
-        '/detail',
-        arguments: {
-          'id': entry.id,
-          'title': entry.title,
-          'content': entry.content,
-          'created_at': entry.createdAt.toIso8601String(),
-        },
-      ).then((_) {
-        _fetchDiaryEntries();
-      });
-    }
+      }
+    });
   }
 
   Future<void> _deleteDiaryEntry(String id) async {
     try {
+      final deleted = diaryEntries.firstWhere((e) => e.id == id);
+      _lastDeletedEntry = deleted;
+
       await supabase.from('diary_entries').delete().eq('id', id);
+      if (!mounted) return;
       _fetchDiaryEntries();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Catatan berhasil dihapus')),
-        );
-      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Catatan dihapus'),
+          action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
+          duration: const Duration(seconds: 5),
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
     }
   }
 
-  void _goToSettings() {
-    Navigator.pushNamed(context, '/settings');
+  Future<void> _undoDelete() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (_lastDeletedEntry == null || userId == null) return;
+
+    try {
+      await supabase.from('diary_entries').insert({
+        'user_id': userId,
+        'title': _lastDeletedEntry!.title,
+        'content': _lastDeletedEntry!.content,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+      _fetchDiaryEntries();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal mengembalikan catatan: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Catatan Harian'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.pushNamed(context, '/profile-form');
-            },
-          ), // Arahkan ke ProfileFormPage
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _goToSettings,
-          ), // Arahkan ke SettingsPage
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ), // Arahkan ke halaman login
-        ],
-      ),
+      appBar: AppBar(title: const Text('Catatan Saya')),
       body: Column(
         children: [
           Padding(
@@ -157,77 +153,83 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : filteredEntries.isEmpty
-              ? const Center(child: Text('Tidak ada catatan yang cocok.'))
-              : Expanded(
-                child: ListView.builder(
-                  itemCount: filteredEntries.length,
-                  itemBuilder: (context, index) {
-                    final entry = filteredEntries[index];
-                    return Dismissible(
-                      key: Key(entry.id),
-                      direction: DismissDirection.horizontal,
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      secondaryBackground: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      confirmDismiss: (_) async {
-                        return await showDialog<bool>(
-                          context: context,
-                          builder:
-                              (_) => AlertDialog(
-                                title: const Text('Hapus Catatan'),
-                                content: const Text(
-                                  'Yakin ingin menghapus catatan ini?',
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, false),
-                                    child: const Text('Batal'),
+          Expanded(
+            child:
+                isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : filteredEntries.isEmpty
+                    ? const Center(child: Text('Tidak ada catatan'))
+                    : ListView.builder(
+                      itemCount: filteredEntries.length,
+                      itemBuilder: (context, index) {
+                        final entry = filteredEntries[index];
+                        return Dismissible(
+                          key: Key(entry.id),
+                          direction: DismissDirection.horizontal,
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerLeft,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          secondaryBackground: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          confirmDismiss: (_) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder:
+                                  (_) => AlertDialog(
+                                    title: const Text('Hapus Catatan'),
+                                    content: const Text(
+                                      'Yakin ingin menghapus catatan ini?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.pop(context, false),
+                                        child: const Text('Batal'),
+                                      ),
+                                      TextButton(
+                                        onPressed:
+                                            () => Navigator.pop(context, true),
+                                        child: const Text('Hapus'),
+                                      ),
+                                    ],
                                   ),
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.pop(context, true),
-                                    child: const Text('Hapus'),
-                                  ),
-                                ],
-                              ),
+                            );
+                          },
+                          onDismissed: (_) => _deleteDiaryEntry(entry.id),
+                          child: Card(
+                            margin: const EdgeInsets.all(8),
+                            elevation: 5,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.all(16),
+                              title: Text(entry.title),
+                              subtitle: Text(entry.createdAt.toString()),
+                              onTap: () => _goToDetail(entry),
+                            ),
+                          ),
                         );
                       },
-                      onDismissed: (_) => _deleteDiaryEntry(entry.id),
-                      child: Card(
-                        margin: const EdgeInsets.all(8),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(16),
-                          title: Text(entry.title),
-                          subtitle: Text(entry.createdAt.toString()),
-                          onTap: () => _goToDetail(entry),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                    ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed:
-            () => _goToDetail(null), // kirim null untuk tambah catatan baru
+        onPressed: () => _goToDetail(null),
         child: const Icon(Icons.add),
       ),
     );
