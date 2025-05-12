@@ -100,6 +100,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _deleteDiaryEntry(String id) async {
+    try {
+      await supabase.from('diary_entries').delete().eq('id', id);
+      _fetchDiaryEntries();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Catatan berhasil dihapus')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
+      }
+    }
+  }
+
   void _goToSettings() {
     Navigator.pushNamed(context, '/settings');
   }
@@ -148,17 +166,58 @@ class _HomePageState extends State<HomePage> {
                   itemCount: filteredEntries.length,
                   itemBuilder: (context, index) {
                     final entry = filteredEntries[index];
-                    return Card(
-                      margin: const EdgeInsets.all(8),
-                      elevation: 5,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    return Dismissible(
+                      key: Key(entry.id),
+                      direction: DismissDirection.horizontal,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
                       ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        title: Text(entry.title),
-                        subtitle: Text(entry.createdAt.toString()),
-                        onTap: () => _goToDetail(entry),
+                      secondaryBackground: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (_) async {
+                        return await showDialog<bool>(
+                          context: context,
+                          builder:
+                              (_) => AlertDialog(
+                                title: const Text('Hapus Catatan'),
+                                content: const Text(
+                                  'Yakin ingin menghapus catatan ini?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.pop(context, false),
+                                    child: const Text('Batal'),
+                                  ),
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.pop(context, true),
+                                    child: const Text('Hapus'),
+                                  ),
+                                ],
+                              ),
+                        );
+                      },
+                      onDismissed: (_) => _deleteDiaryEntry(entry.id),
+                      child: Card(
+                        margin: const EdgeInsets.all(8),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          title: Text(entry.title),
+                          subtitle: Text(entry.createdAt.toString()),
+                          onTap: () => _goToDetail(entry),
+                        ),
                       ),
                     );
                   },
