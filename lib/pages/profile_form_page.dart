@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -106,37 +108,61 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   Future<void> _uploadFotoProfil() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
-
     if (picked == null) return;
 
-    final file = File(picked.path);
-    final user = _supabase.auth.currentUser;
+    final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
     final fileExt = picked.path.split('.').last;
-    final filePath = 'avatars/${user.id}.$fileExt';
+    final filePath = '${user.id}/profile.$fileExt'; // ✅ benar!
 
     try {
-      // Upload ke Storage Supabase
-      await _supabase.storage
-          .from('avatars')
-          .upload(filePath, file, fileOptions: const FileOptions(upsert: true));
+      // Upload file ke storage Supabase
+      if (kIsWeb) {
+        final bytes = await picked.readAsBytes();
+        await Supabase.instance.client.storage
+            .from('avatars')
+            .uploadBinary(
+              filePath,
+              bytes,
+              fileOptions: const FileOptions(upsert: true),
+            );
+      } else {
+        final file = File(picked.path);
+        await Supabase.instance.client.storage
+            .from('avatars')
+            .upload(
+              filePath,
+              file,
+              fileOptions: const FileOptions(upsert: true),
+            );
+      }
 
-      final publicUrl = _supabase.storage
+      // Ambil URL publik dari storage
+      final publicUrl = Supabase.instance.client.storage
           .from('avatars')
           .getPublicUrl(filePath);
+
+      // Update data foto ke tabel user_profiles
+      await Supabase.instance.client
+          .from('user_profiles')
+          .update({'foto_profil': publicUrl})
+          .eq('id', user.id);
 
       setState(() {
         _fotoUrl = publicUrl;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto profil berhasil diunggah')),
+        const SnackBar(
+          content: Text('Foto profil berhasil diunggah dan disimpan'),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal upload foto: $e')));
+      ).showSnackBar(SnackBar(content: Text('Gagal upload/simpan foto: $e')));
+      print('Error uploading image: $e');
     }
   }
 
