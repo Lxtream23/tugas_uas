@@ -186,16 +186,20 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           key: _formKey,
           child: ListView(
             children: [
-              if (_fotoUrl != null)
-                Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundImage: NetworkImage(_fotoUrl!),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
+              Column(
+                children: [
+                  CircleAvatar(
+                    radius: 64,
+                    backgroundImage:
+                        _fotoUrl != null && _fotoUrl!.isNotEmpty
+                            ? NetworkImage(_fotoUrl!)
+                            : const AssetImage('assets/default_avatar.png')
+                                as ImageProvider,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+
               ElevatedButton.icon(
                 onPressed: _uploadFotoProfil,
                 icon: const Icon(Icons.image),
