@@ -166,6 +166,89 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     }
   }
 
+  void _showAvatarPicker() {
+    final avatarAssets = [
+      'assets/avatars/avatar1.png',
+      'assets/avatars/avatar2.png',
+      'assets/avatars/avatar3.png',
+      'assets/avatars/avatar4.png',
+      'assets/avatars/avatar5.png',
+      'assets/avatars/avatar6.png',
+      'assets/avatars/avatar7.png',
+      'assets/avatars/avatar8.png',
+      'assets/avatars/avatar9.png',
+      'assets/avatars/avatar10.png',
+    ];
+
+    final List<String> avatarList = List.from(avatarAssets);
+
+    // Tambahkan foto dari Supabase Storage jika ada
+    if (_fotoUrl != null && _fotoUrl!.startsWith('http')) {
+      avatarList.insert(0, _fotoUrl!); // taruh di awal
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Pilih Avatar', style: TextStyle(fontSize: 16)),
+              const SizedBox(height: 12),
+
+              // GridView untuk semua avatar
+              SizedBox(
+                height: 250,
+                child: GridView.builder(
+                  itemCount: avatarList.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemBuilder: (context, index) {
+                    final path = avatarList[index];
+                    final isUrl = path.startsWith('http');
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _fotoUrl = path);
+                        Navigator.pop(context);
+                      },
+                      child: CircleAvatar(
+                        backgroundImage:
+                            isUrl
+                                ? NetworkImage(path)
+                                : AssetImage(path) as ImageProvider,
+                        radius: 32,
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _uploadFotoProfil();
+                },
+                icon: const Icon(Icons.upload),
+                label: const Text('Upload dari Galeri'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -178,6 +261,15 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    ImageProvider avatarImage;
+
+    if (_fotoUrl == null || _fotoUrl!.isEmpty) {
+      avatarImage = const AssetImage('assets/avatars/avatar1.png');
+    } else if (_fotoUrl!.startsWith('http')) {
+      avatarImage = NetworkImage(_fotoUrl!);
+    } else {
+      avatarImage = AssetImage(_fotoUrl!);
+    }
     return Scaffold(
       appBar: AppBar(title: const Text('Profil')),
       body: Padding(
@@ -186,18 +278,27 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           key: _formKey,
           child: ListView(
             children: [
-              Column(
-                children: [
-                  CircleAvatar(
-                    radius: 64,
-                    backgroundImage:
-                        _fotoUrl != null && _fotoUrl!.isNotEmpty
-                            ? NetworkImage(_fotoUrl!)
-                            : const AssetImage('assets/default_avatar.png')
-                                as ImageProvider,
+              GestureDetector(
+                onTap: _showAvatarPicker,
+                child: CircleAvatar(
+                  radius: 64,
+                  backgroundColor: Colors.grey[200],
+                  child: ClipOval(
+                    child: SizedBox(
+                      width: 128,
+                      height: 128,
+                      child:
+                          _fotoUrl != null && _fotoUrl!.isNotEmpty
+                              ? (_fotoUrl!.startsWith('http')
+                                  ? Image.network(_fotoUrl!, fit: BoxFit.cover)
+                                  : Image.asset(_fotoUrl!, fit: BoxFit.cover))
+                              : Image.asset(
+                                'assets/avatars/avatar1.png',
+                                fit: BoxFit.cover,
+                              ),
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                ],
+                ),
               ),
 
               ElevatedButton.icon(
