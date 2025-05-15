@@ -23,6 +23,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   final _statusController = TextEditingController();
 
   String? _fotoUrl;
+  String? _uploadedFotoUrl;
   bool _isLoading = false;
 
   @override
@@ -56,6 +57,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           _statusController.text = response['status'] ?? '';
           setState(() {
             _fotoUrl = response['foto_profil'] ?? '';
+            _uploadedFotoUrl = response['upload_url'];
+            print('LOADED upload_url from Supabase: $_uploadedFotoUrl');
           });
         }
       } catch (e) {
@@ -66,6 +69,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         }
       }
     }
+    print('Foto URL: $_fotoUrl');
+    print('Upload URL: $_uploadedFotoUrl');
   }
 
   Future<void> _submit() async {
@@ -146,10 +151,11 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       // Update data foto ke tabel user_profiles
       await Supabase.instance.client
           .from('user_profiles')
-          .update({'foto_profil': publicUrl})
+          .update({'foto_profil': publicUrl, 'upload_url': publicUrl})
           .eq('id', user.id);
 
       setState(() {
+        _uploadedFotoUrl = publicUrl;
         _fotoUrl = publicUrl;
       });
 
@@ -167,6 +173,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   }
 
   void _showAvatarPicker() {
+    print('Uploaded foto url: $_uploadedFotoUrl');
+
     final avatarAssets = [
       'assets/avatars/avatar1.png',
       'assets/avatars/avatar2.png',
@@ -180,12 +188,14 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       'assets/avatars/avatar10.png',
     ];
 
-    final List<String> avatarList = List.from(avatarAssets);
+    final List<String> avatarList = [];
 
     // Tambahkan foto dari Supabase Storage jika ada
-    if (_fotoUrl != null && _fotoUrl!.startsWith('http')) {
-      avatarList.insert(0, _fotoUrl!); // taruh di awal
+    if (_uploadedFotoUrl != null && _uploadedFotoUrl!.startsWith('http')) {
+      avatarList.add(_uploadedFotoUrl!); // taruh di awal
     }
+    // Lalu tambahkan semua avatar default dari asset
+    avatarList.addAll(avatarAssets);
 
     showModalBottomSheet(
       context: context,
@@ -218,9 +228,16 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
                     return GestureDetector(
                       onTap: () {
-                        setState(() => _fotoUrl = path);
+                        setState(() {
+                          _fotoUrl = path;
+                          // ❗ Tambahkan hanya jika path adalah URL Supabase
+                          if (path.startsWith('http')) {
+                            _uploadedFotoUrl = path;
+                          }
+                        });
                         Navigator.pop(context);
                       },
+
                       child: CircleAvatar(
                         backgroundImage:
                             isUrl
