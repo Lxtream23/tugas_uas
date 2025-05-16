@@ -115,66 +115,88 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
 
-    final user = Supabase.instance.client.auth.currentUser;
+    final fileExt = picked.name.split('.').last.toLowerCase();
+    if (!(fileExt == 'jpg' || fileExt == 'png')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Format file tidak didukung (hanya JPG/PNG)'),
+        ),
+      );
+      return;
+    }
+
+    final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    final fileExt = picked.path.split('.').last;
-    final filePath = '${user.id}/profile.$fileExt'; // ✅ benar!
+    final fileBytes = await picked.readAsBytes();
+
+    // ✅ Buat nama file dari timestamp saja
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final filePath = "${user.id}/$fileName";
 
     try {
-      // Upload file ke storage Supabase
-      if (kIsWeb) {
-        final bytes = await picked.readAsBytes();
-        await Supabase.instance.client.storage
-            .from('avatars')
-            .uploadBinary(
-              filePath,
-              bytes,
-              fileOptions: const FileOptions(upsert: true),
-            );
-      } else {
-        final file = File(picked.path);
-        await Supabase.instance.client.storage
-            .from('avatars')
-            .upload(
-              filePath,
-              file,
-              fileOptions: const FileOptions(upsert: true),
-            );
-      }
+      await _supabase.storage
+          .from('avatars')
+          .uploadBinary(
+            filePath,
+            fileBytes,
+            fileOptions: const FileOptions(upsert: false),
+          );
 
-      // Ambil URL publik dari storage
-      final publicUrl = Supabase.instance.client.storage
+      final publicUrl = _supabase.storage
           .from('avatars')
           .getPublicUrl(filePath);
 
-      // Update data foto ke tabel user_profiles
-      await Supabase.instance.client
-          .from('user_profiles')
-          .update({'foto_profil': publicUrl, 'upload_url': publicUrl})
-          .eq('id', user.id);
+      print('✅ File uploaded: $filePath');
+      print('✅ Public URL: $publicUrl');
 
       setState(() {
-        _uploadedFotoUrl = publicUrl;
         _fotoUrl = publicUrl;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Foto profil berhasil diunggah dan disimpan'),
-        ),
-      );
+      await _supabase
+          .from('user_profiles')
+          .update({'foto_profil': _fotoUrl})
+          .eq('id', user.id);
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Foto berhasil diunggah')));
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal upload/simpan foto: $e')));
-      print('Error uploading image: $e');
+      ).showSnackBar(SnackBar(content: Text('Gagal upload foto: $e')));
+      print('Gagal upload foto: $e');
     }
   }
 
-  void _showAvatarPicker() {
-    print('Uploaded foto url: $_uploadedFotoUrl');
+  Future<List<String>> _getUploadedAvatars() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return [];
 
+    try {
+      final files = await _supabase.storage.from('avatars').list(path: user.id);
+
+      final validFiles =
+          files
+              .where(
+                (file) =>
+                    file.name.endsWith('.jpg') || file.name.endsWith('.png'),
+              )
+              .toList();
+
+      return validFiles.map((file) {
+        return _supabase.storage
+            .from('avatars')
+            .getPublicUrl("${user.id}/${file.name}");
+      }).toList();
+    } catch (e) {
+      print('❌ Gagal ambil avatar: $e');
+      return [];
+    }
+  }
+
+  Future<void> _showAvatarPicker() async {
     final avatarAssets = [
       'assets/avatars/avatar1.png',
       'assets/avatars/avatar2.png',
@@ -188,14 +210,12 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       'assets/avatars/avatar10.png',
     ];
 
-    final List<String> avatarList = [];
+    // Ambil avatar dari Supabase Storage
+    final uploadedAvatars = await _getUploadedAvatars();
+    print('📸 Avatar dari Supabase: $uploadedAvatars');
 
-    // Tambahkan foto dari Supabase Storage jika ada
-    if (_uploadedFotoUrl != null && _uploadedFotoUrl!.startsWith('http')) {
-      avatarList.add(_uploadedFotoUrl!); // taruh di awal
-    }
-    // Lalu tambahkan semua avatar default dari asset
-    avatarList.addAll(avatarAssets);
+    // Gabungkan semua avatar (upload + asset)
+    final avatarList = [...uploadedAvatars, ...avatarAssets];
 
     showModalBottomSheet(
       context: context,
@@ -212,7 +232,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               const Text('Pilih Avatar', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 12),
 
-              // GridView untuk semua avatar
+              // GridView avatar
               SizedBox(
                 height: 250,
                 child: GridView.builder(
@@ -227,23 +247,28 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     final isUrl = path.startsWith('http');
 
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         setState(() {
                           _fotoUrl = path;
-                          // ❗ Tambahkan hanya jika path adalah URL Supabase
-                          if (path.startsWith('http')) {
-                            _uploadedFotoUrl = path;
-                          }
                         });
+
+                        // Simpan avatar pilihan ke Supabase
+                        await _supabase
+                            .from('user_profiles')
+                            .update({'foto_profil': _fotoUrl})
+                            .eq('id', _supabase.auth.currentUser!.id);
+
                         Navigator.pop(context);
                       },
-
                       child: CircleAvatar(
                         backgroundImage:
                             isUrl
                                 ? NetworkImage(path)
                                 : AssetImage(path) as ImageProvider,
                         radius: 32,
+                        onBackgroundImageError: (e, stack) {
+                          print("❌ Gagal load avatar: $path");
+                        },
                       ),
                     );
                   },
@@ -251,10 +276,12 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               ),
 
               const SizedBox(height: 16),
+
+              // Tombol Upload Avatar
               TextButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
-                  _uploadFotoProfil();
+                  _uploadFotoProfil(); // Fungsi upload avatar
                 },
                 icon: const Icon(Icons.upload),
                 label: const Text('Upload dari Galeri'),
@@ -264,6 +291,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         );
       },
     );
+
+    print('📦 Total avatar yang ditampilkan: ${avatarList.length}');
   }
 
   @override
@@ -296,7 +325,9 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           child: ListView(
             children: [
               GestureDetector(
-                onTap: _showAvatarPicker,
+                onTap: () async {
+                  await _showAvatarPicker();
+                },
                 child: CircleAvatar(
                   radius: 64,
                   backgroundColor: Colors.grey[200],
