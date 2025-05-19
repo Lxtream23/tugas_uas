@@ -12,6 +12,8 @@ class ProfileFormPage extends StatefulWidget {
   State<ProfileFormPage> createState() => _ProfileFormPageState();
 }
 
+bool _hovering = false;
+
 class _ProfileFormPageState extends State<ProfileFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _supabase = Supabase.instance.client;
