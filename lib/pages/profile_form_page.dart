@@ -170,7 +170,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     }
   }
 
-  Future<List<String>> _getUploadedAvatars() async {
+  Future<List<Map<String, String>>> _getUploadedAvatars() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return [];
 
@@ -186,12 +186,13 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               .toList();
 
       return validFiles.map((file) {
-        return _supabase.storage
+        final url = _supabase.storage
             .from('avatars')
             .getPublicUrl("${user.id}/${file.name}");
+        return {'url': url, 'name': file.name};
       }).toList();
     } catch (e) {
-      print('❌ Gagal ambil avatar: $e');
+      print('❌ Gagal ambil avatar: \$e');
       return [];
     }
   }
@@ -215,7 +216,11 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     print('📸 Avatar dari Supabase: $uploadedAvatars');
 
     // Gabungkan semua avatar (upload + asset)
-    final avatarList = [...uploadedAvatars, ...avatarAssets];
+    final avatarList = [
+      ...uploadedAvatars,
+      ...avatarAssets.map((asset) => {'url': asset, 'name': ''}),
+    ];
+    print('📦 Total avatar: ${avatarList.length}');
 
     showModalBottomSheet(
       context: context,
@@ -243,33 +248,96 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     mainAxisSpacing: 12,
                   ),
                   itemBuilder: (context, index) {
-                    final path = avatarList[index];
+                    final data = avatarList[index];
+                    final mapData = data as Map<String, String>;
+                    final path = mapData['url']!;
+                    final fileName = mapData['name']!;
                     final isUrl = path.startsWith('http');
 
-                    return GestureDetector(
-                      onTap: () async {
-                        setState(() {
-                          _fotoUrl = path;
-                        });
+                    return Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            setState(() {
+                              _fotoUrl = path;
+                            });
 
-                        // Simpan avatar pilihan ke Supabase
-                        await _supabase
-                            .from('user_profiles')
-                            .update({'foto_profil': _fotoUrl})
-                            .eq('id', _supabase.auth.currentUser!.id);
+                            await _supabase
+                                .from('user_profiles')
+                                .update({'foto_profil': _fotoUrl})
+                                .eq('id', _supabase.auth.currentUser!.id);
 
-                        Navigator.pop(context);
-                      },
-                      child: CircleAvatar(
-                        backgroundImage:
-                            isUrl
-                                ? NetworkImage(path)
-                                : AssetImage(path) as ImageProvider,
-                        radius: 32,
-                        onBackgroundImageError: (e, stack) {
-                          print("❌ Gagal load avatar: $path");
-                        },
-                      ),
+                            Navigator.pop(context);
+                          },
+                          child: CircleAvatar(
+                            backgroundImage:
+                                isUrl
+                                    ? NetworkImage(path)
+                                    : AssetImage(path) as ImageProvider,
+                            radius: 32,
+                            onBackgroundImageError: (e, stack) {
+                              print("❌ Gagal load avatar: $path");
+                            },
+                          ),
+                        ),
+
+                        // 🗑️ Tampilkan tombol hapus hanya untuk URL Supabase
+                        if (isUrl)
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                              padding: EdgeInsets.zero,
+                              onPressed: () async {
+                                final user = _supabase.auth.currentUser;
+                                if (user == null) return;
+
+                                final filename = path.split('/').last;
+                                final filePath = "${user.id}/$filename";
+                                print("🧾 Hapus file di Supabase: $filePath");
+
+                                try {
+                                  final result = await _supabase.storage
+                                      .from('avatars')
+                                      .remove([filePath]);
+
+                                  print('🔁 Result hapus: $result');
+
+                                  if (result.isNotEmpty) {
+                                    setState(() {
+                                      _fotoUrl = null;
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          '✅ Avatar berhasil dihapus',
+                                        ),
+                                      ),
+                                    );
+                                    Navigator.pop(context);
+                                    await _showAvatarPicker(); // refresh daftar
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          '❌ Gagal menghapus avatar',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  print('❌ Gagal hapus avatar: $e');
+                                }
+                              },
+                            ),
+                          ),
+                      ],
                     );
                   },
                 ),
@@ -336,10 +404,21 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                       width: 128,
                       height: 128,
                       child:
-                          _fotoUrl != null && _fotoUrl!.isNotEmpty
-                              ? (_fotoUrl!.startsWith('http')
-                                  ? Image.network(_fotoUrl!, fit: BoxFit.cover)
-                                  : Image.asset(_fotoUrl!, fit: BoxFit.cover))
+                          (_fotoUrl != null &&
+                                  _fotoUrl!.isNotEmpty &&
+                                  _fotoUrl!.startsWith('http'))
+                              ? Image.network(
+                                _fotoUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Image.asset(
+                                    'assets/avatars/avatar1.png',
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              )
+                              : (_fotoUrl != null && _fotoUrl!.isNotEmpty)
+                              ? Image.asset(_fotoUrl!, fit: BoxFit.cover)
                               : Image.asset(
                                 'assets/avatars/avatar1.png',
                                 fit: BoxFit.cover,
