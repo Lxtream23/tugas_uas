@@ -440,14 +440,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return 'Email wajib diisi';
-                  final pattern = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
-                  if (!pattern.hasMatch(value))
-                    return 'Format email tidak valid';
-                  return null;
-                },
+                readOnly: true,
               ),
               const SizedBox(height: 12),
               TextFormField(
