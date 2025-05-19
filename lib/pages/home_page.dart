@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diary_entry.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final void Function(ThemeMode)? onThemeChanged;
+
+  const HomePage({Key? key, this.onThemeChanged}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();

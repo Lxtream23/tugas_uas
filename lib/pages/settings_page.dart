@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/email_confirmation_page.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  final void Function(ThemeMode)? onThemeChanged;
+
+  const SettingsPage({super.key, this.onThemeChanged});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -19,6 +21,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _newPasswordController = TextEditingController();
 
   bool _isLoading = false;
+
+  ThemeMode _selectedTheme = ThemeMode.system;
 
   @override
   void initState() {
@@ -50,6 +54,21 @@ class _SettingsPageState extends State<SettingsPage> {
           key: _formKey,
           child: Column(
             children: [
+              ListTile(
+                leading: Icon(Icons.brightness_6),
+                title: Text('Tema Gelap'),
+                trailing: Switch(
+                  value: _selectedTheme == ThemeMode.dark,
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedTheme = value ? ThemeMode.dark : ThemeMode.light;
+                    });
+
+                    // Kirim ke MyApp atau simpan pakai SharedPreferences
+                    widget.onThemeChanged?.call(_selectedTheme);
+                  },
+                ),
+              ),
               ListTile(
                 leading: Icon(Icons.email),
                 title: Text('Ubah Email'),

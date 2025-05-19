@@ -9,16 +9,23 @@ import 'package:tugas_uas/pages/register_page.dart';
 import 'package:tugas_uas/pages/splash_page.dart';
 import 'package:tugas_uas/pages/settings_page.dart';
 
-void main() async {
-  await Supabase.initialize(
-    url: 'https://pkdoslagpkuxbstpuvil.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrZG9zbGFncGt1eGJzdHB1dmlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDc0NDgsImV4cCI6MjA2MTcyMzQ0OH0.4pZTEO6DM_CD8-7bap2VEgS5dVRpnxPsgn3gdq2rZYQ',
-  );
-  runApp(MyApp());
+class MyApp extends StatefulWidget {
+  @override
+  State<MyApp> createState() => _MyAppState();
 }
 
-class MyApp extends StatelessWidget {
+class _MyAppState extends State<MyApp> {
+  ThemeMode _themeMode = ThemeMode.system;
+
+  void main() async {
+    await Supabase.initialize(
+      url: 'https://pkdoslagpkuxbstpuvil.supabase.co',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrZG9zbGFncGt1eGJzdHB1dmlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDc0NDgsImV4cCI6MjA2MTcyMzQ0OH0.4pZTEO6DM_CD8-7bap2VEgS5dVRpnxPsgn3gdq2rZYQ',
+    );
+    runApp(MyApp());
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -26,8 +33,15 @@ class MyApp extends StatelessWidget {
       title: 'Catatan Harian',
       theme: ThemeData.light(), // Tema terang
       darkTheme: ThemeData.dark(), // Tema gelap
-      themeMode:
-          ThemeMode.system, // Mengikuti pengaturan sistem (gelap atau terang)
+      themeMode: _themeMode, // 🔁 Gunakan ini
+      home: HomePage(
+        onThemeChanged: (mode) {
+          setState(() {
+            _themeMode = mode;
+          });
+        },
+      ),
+
       initialRoute: '/',
       routes: {
         '/': (_) => const SplashPage(),
