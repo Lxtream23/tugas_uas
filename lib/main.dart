@@ -25,6 +25,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  final ValueNotifier<ThemeMode> _themeNotifier = ValueNotifier(
+    ThemeMode.system,
+  );
   ThemeMode _themeMode = ThemeMode.system;
 
   @override
@@ -64,26 +67,33 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Catatan Harian',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
-      themeMode: _themeMode,
-      initialRoute: '/',
-      routes: {
-        '/': (_) => const SplashPage(),
-        '/login': (_) => const LoginPage(),
-        '/register': (_) => const RegisterPage(),
-        '/home':
-            (_) =>
-                SessionGuard(child: HomePage(onThemeChanged: _onThemeChanged)),
-        '/detail': (_) => const SessionGuard(child: DetailPage()),
-        '/settings':
-            (_) => SessionGuard(
-              child: SettingsPage(onThemeChanged: _onThemeChanged),
-            ),
-        '/profile-form': (_) => const SessionGuard(child: ProfileFormPage()),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: _themeNotifier,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'Catatan Harian',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: _themeMode,
+          initialRoute: '/',
+          routes: {
+            '/': (_) => const SplashPage(),
+            '/login': (_) => const LoginPage(),
+            '/register': (_) => const RegisterPage(),
+            '/home':
+                (_) => SessionGuard(
+                  child: HomePage(onThemeChanged: _onThemeChanged),
+                ),
+            '/detail': (_) => const SessionGuard(child: DetailPage()),
+            '/settings':
+                (_) => SessionGuard(
+                  child: SettingsPage(onThemeChanged: _onThemeChanged),
+                ),
+            '/profile-form':
+                (_) => const SessionGuard(child: ProfileFormPage()),
+          },
+        );
       },
     );
   }

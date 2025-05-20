@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/email_confirmation_page.dart';
@@ -23,6 +24,12 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isLoading = false;
 
   ThemeMode _selectedTheme = ThemeMode.system;
+
+  final List<ThemeMode> _themeOptions = [
+    ThemeMode.light,
+    ThemeMode.dark,
+    ThemeMode.system,
+  ];
 
   @override
   void initState() {
