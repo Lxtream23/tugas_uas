@@ -35,6 +35,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadUserData();
+    _loadThemeFromPrefs();
   }
 
   // Mengambil data pengguna
@@ -49,6 +50,21 @@ class _SettingsPageState extends State<SettingsPage> {
         _usernameController.text = user.userMetadata?['username'] ?? '';
       });
     }
+  }
+
+  Future<void> _loadThemeFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeStr = prefs.getString('theme_mode');
+
+    setState(() {
+      if (themeStr == 'ThemeMode.dark') {
+        _selectedTheme = ThemeMode.dark;
+      } else if (themeStr == 'ThemeMode.light') {
+        _selectedTheme = ThemeMode.light;
+      } else {
+        _selectedTheme = ThemeMode.system;
+      }
+    });
   }
 
   @override
