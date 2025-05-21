@@ -2,11 +2,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/email_confirmation_page.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
+  final void Function(Color)? onAccentColorChanged;
 
-  const SettingsPage({super.key, this.onThemeChanged});
+  const SettingsPage({
+    super.key,
+    this.onThemeChanged,
+    this.onAccentColorChanged,
+  });
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -25,6 +31,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   ThemeMode _selectedTheme = ThemeMode.system;
 
+  Color _primaryColor = Colors.blue; // Default color
+
   final List<ThemeMode> _themeOptions = [
     ThemeMode.light,
     ThemeMode.dark,
@@ -36,6 +44,7 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _loadUserData();
     _loadThemeFromPrefs();
+    _loadAccentColor();
   }
 
   // Mengambil data pengguna
@@ -67,6 +76,16 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  Future<void> _loadAccentColor() async {
+    final prefs = await SharedPreferences.getInstance();
+    final colorValue = prefs.getInt('primary_color');
+    if (colorValue != null) {
+      setState(() {
+        _primaryColor = Color(colorValue);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,6 +110,37 @@ class _SettingsPageState extends State<SettingsPage> {
                     widget.onThemeChanged?.call(_selectedTheme);
                   },
                 ),
+              ),
+              ListTile(
+                leading: Icon(Icons.color_lens),
+                title: Text('Warna Aksen'),
+                trailing: CircleAvatar(backgroundColor: _primaryColor),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Pilih Warna Aksen'),
+                        content: SingleChildScrollView(
+                          child: BlockPicker(
+                            pickerColor: _primaryColor,
+                            onColorChanged: (color) async {
+                              setState(() => _primaryColor = color);
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              prefs.setInt('primary_color', color.value);
+
+                              // Kirim ke main.dart kalau kamu pakai fungsi callback
+                              widget.onAccentColorChanged?.call(color);
+
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
               ListTile(
                 leading: Icon(Icons.email),

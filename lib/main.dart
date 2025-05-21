@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/guards/session_guard.dart';
 import 'package:tugas_uas/pages/detail_page.dart';
@@ -28,12 +29,15 @@ class _MyAppState extends State<MyApp> {
   final ValueNotifier<ThemeMode> _themeNotifier = ValueNotifier(
     ThemeMode.system,
   );
+  final ValueNotifier<Color> _accentColorNotifier = ValueNotifier(Colors.blue);
   ThemeMode _themeMode = ThemeMode.system;
+  Color _primaryColor = Colors.blue;
 
   @override
   void initState() {
     super.initState();
     _loadThemeMode();
+    _loadAccentColor();
   }
 
   void _onThemeChanged(ThemeMode mode) async {
@@ -65,33 +69,69 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _loadAccentColor() async {
+    final prefs = await SharedPreferences.getInstance();
+    final colorValue = prefs.getInt('primary_color');
+    if (colorValue != null) {
+      setState(() {
+        _primaryColor = Color(colorValue);
+      });
+    }
+  }
+
+  void _onAccentColorChanged(Color color) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('primary_color', color.value);
+    _accentColorNotifier.value = color;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: _themeNotifier,
       builder: (context, mode, _) {
-        return MaterialApp(
-          title: 'Catatan Harian',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData.light(),
-          darkTheme: ThemeData.dark(),
-          themeMode: _themeMode,
-          initialRoute: '/',
-          routes: {
-            '/': (_) => const SplashPage(),
-            '/login': (_) => const LoginPage(),
-            '/register': (_) => const RegisterPage(),
-            '/home':
-                (_) => SessionGuard(
-                  child: HomePage(onThemeChanged: _onThemeChanged),
+        return ValueListenableBuilder<Color>(
+          valueListenable: _accentColorNotifier,
+          builder: (context, color, _) {
+            return MaterialApp(
+              title: 'Catatan Harian',
+              debugShowCheckedModeBanner: false,
+              // theme: ThemeData.light(),
+              // darkTheme: ThemeData.dark(),
+              themeMode: _themeMode,
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: color),
+                useMaterial3: true,
+              ),
+              darkTheme: ThemeData.dark().copyWith(
+                colorScheme: ColorScheme.fromSeed(
+                  seedColor: color,
+                  brightness: Brightness.dark,
                 ),
-            '/detail': (_) => const SessionGuard(child: DetailPage()),
-            '/settings':
-                (_) => SessionGuard(
-                  child: SettingsPage(onThemeChanged: _onThemeChanged),
-                ),
-            '/profile-form':
-                (_) => const SessionGuard(child: ProfileFormPage()),
+                useMaterial3: true,
+              ),
+
+              initialRoute: '/',
+              routes: {
+                '/': (_) => const SplashPage(),
+                '/login': (_) => const LoginPage(),
+                '/register': (_) => const RegisterPage(),
+                '/home':
+                    (_) => SessionGuard(
+                      child: HomePage(onThemeChanged: _onThemeChanged),
+                    ),
+                '/detail': (_) => const SessionGuard(child: DetailPage()),
+                '/settings':
+                    (_) => SessionGuard(
+                      child: SettingsPage(
+                        onThemeChanged: _onThemeChanged,
+                        onAccentColorChanged: _onAccentColorChanged,
+                      ),
+                    ),
+                '/profile-form':
+                    (_) => const SessionGuard(child: ProfileFormPage()),
+              },
+            );
           },
         );
       },
