@@ -10,6 +10,7 @@ import 'package:tugas_uas/pages/register_page.dart';
 import 'package:tugas_uas/pages/splash_page.dart';
 import 'package:tugas_uas/pages/settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tugas_uas/services/notification_service.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -17,6 +18,13 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBrZG9zbGFncGt1eGJzdHB1dmlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxNDc0NDgsImV4cCI6MjA2MTcyMzQ0OH0.4pZTEO6DM_CD8-7bap2VEgS5dVRpnxPsgn3gdq2rZYQ',
   );
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool('notif_harian') ?? false) {
+    await NotificationService.scheduleDailyReminder(hour: 20, minute: 0);
+  }
+
   runApp(MyApp());
 }
 

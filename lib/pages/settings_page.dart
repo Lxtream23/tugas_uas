@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/email_confirmation_page.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import 'package:tugas_uas/services/notification_service.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -28,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _newPasswordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _notifAktif = false;
 
   ThemeMode _selectedTheme = ThemeMode.system;
 
@@ -45,6 +47,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadUserData();
     _loadThemeFromPrefs();
     _loadAccentColor();
+    _loadNotifikasiStatus();
   }
 
   // Mengambil data pengguna
@@ -84,6 +87,13 @@ class _SettingsPageState extends State<SettingsPage> {
         _primaryColor = Color(colorValue);
       });
     }
+  }
+
+  Future<void> _loadNotifikasiStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notifAktif = prefs.getBool('notif_harian') ?? false;
+    });
   }
 
   @override
@@ -140,6 +150,35 @@ class _SettingsPageState extends State<SettingsPage> {
                       );
                     },
                   );
+                },
+              ),
+              SwitchListTile(
+                title: const Text('Notifikasi Harian'),
+                subtitle: const Text('Ingatkan setiap hari jam 8 malam'),
+                value: _notifAktif,
+                onChanged: (value) async {
+                  final prefs = await SharedPreferences.getInstance();
+                  setState(() => _notifAktif = value);
+                  prefs.setBool('notif_harian', value);
+
+                  if (value) {
+                    try {
+                      await NotificationService.scheduleDailyReminder(
+                        hour: 20,
+                        minute: 0,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Notifikasi diaktifkan')),
+                      );
+                    } catch (e) {
+                      print('❌ Gagal menjadwalkan notifikasi: $e');
+                    }
+                  } else {
+                    // ⚠️ Tidak memanggil cancelAll(), cukup tidak menjadwalkan lagi
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Notifikasi dinonaktifkan')),
+                    );
+                  }
                 },
               ),
               ListTile(
