@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tugas_uas/pages/email_confirmation_page.dart';
+import 'package:tugas_uas/pages/auth/email_confirmation_page.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:tugas_uas/services/notification_service.dart';
 

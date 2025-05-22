@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/diary_entry.dart';
+import '../../models/diary_entry.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
