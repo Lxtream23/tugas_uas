@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/notification_service.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -157,8 +158,12 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             title: const Text('Fase Pengingat'),
             subtitle: const Text('Otomatis'), // placeholder
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Fitur belum tersedia')),
+              showCustomSnackBar(
+                context,
+                'Fitur belum tersedia',
+                type: SnackBarType.warning,
+                duration: const Duration(seconds: 2),
+                showAtTop: true,
               );
             },
           ),
