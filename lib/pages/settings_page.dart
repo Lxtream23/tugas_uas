@@ -41,6 +41,11 @@ class _SettingsPageState extends State<SettingsPage> {
     ThemeMode.system,
   ];
 
+  TimeOfDay _waktuNotifikasi = const TimeOfDay(
+    hour: 20,
+    minute: 0,
+  ); // default jam 8 malam
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +53,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadThemeFromPrefs();
     _loadAccentColor();
     _loadNotifikasiStatus();
+    _loadWaktuNotifikasi();
   }
 
   // Mengambil data pengguna
@@ -93,6 +99,16 @@ class _SettingsPageState extends State<SettingsPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _notifAktif = prefs.getBool('notif_harian') ?? false;
+    });
+  }
+
+  Future<void> _loadWaktuNotifikasi() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hour = prefs.getInt('notif_hour') ?? 20;
+    final minute = prefs.getInt('notif_minute') ?? 0;
+
+    setState(() {
+      _waktuNotifikasi = TimeOfDay(hour: hour, minute: minute);
     });
   }
 
@@ -152,35 +168,72 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 },
               ),
-              SwitchListTile(
+              ExpansionTile(
+                leading: const Icon(Icons.notifications),
                 title: const Text('Notifikasi Harian'),
-                subtitle: const Text('Ingatkan setiap hari jam 8 malam'),
-                value: _notifAktif,
-                onChanged: (value) async {
-                  final prefs = await SharedPreferences.getInstance();
-                  setState(() => _notifAktif = value);
-                  prefs.setBool('notif_harian', value);
+                children: [
+                  SwitchListTile(
+                    title: const Text('Aktifkan Notifikasi'),
+                    value: _notifAktif,
+                    onChanged: (value) async {
+                      final prefs = await SharedPreferences.getInstance();
+                      setState(() => _notifAktif = value);
+                      await prefs.setBool('notif_harian', value);
 
-                  if (value) {
-                    try {
-                      await NotificationService.scheduleDailyReminder(
-                        hour: 20,
-                        minute: 0,
+                      if (value) {
+                        await NotificationService.scheduleDailyReminder(
+                          hour: _waktuNotifikasi.hour,
+                          minute: _waktuNotifikasi.minute,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Notifikasi diaktifkan'),
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notifikasi dimatikan')),
+                        );
+                      }
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.access_time),
+                    title: const Text('Jam Pengingat'),
+                    subtitle: Text(
+                      '${_waktuNotifikasi.format(context)} setiap hari',
+                    ),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _waktuNotifikasi,
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Notifikasi diaktifkan')),
-                      );
-                    } catch (e) {
-                      print('❌ Gagal menjadwalkan notifikasi: $e');
-                    }
-                  } else {
-                    // ⚠️ Tidak memanggil cancelAll(), cukup tidak menjadwalkan lagi
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Notifikasi dinonaktifkan')),
-                    );
-                  }
-                },
+
+                      if (picked != null) {
+                        final prefs = await SharedPreferences.getInstance();
+                        setState(() => _waktuNotifikasi = picked);
+                        await prefs.setInt('notif_hour', picked.hour);
+                        await prefs.setInt('notif_minute', picked.minute);
+
+                        if (_notifAktif) {
+                          await NotificationService.scheduleDailyReminder(
+                            hour: picked.hour,
+                            minute: picked.minute,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Notifikasi dijadwalkan ulang ke ${picked.format(context)}',
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
               ),
+
               ListTile(
                 leading: Icon(Icons.email),
                 title: Text('Ubah Email'),

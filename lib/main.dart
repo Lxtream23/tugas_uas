@@ -22,7 +22,9 @@ void main() async {
   await NotificationService.init();
   final prefs = await SharedPreferences.getInstance();
   if (prefs.getBool('notif_harian') ?? false) {
-    await NotificationService.scheduleDailyReminder(hour: 20, minute: 0);
+    final hour = prefs.getInt('notif_hour') ?? 20;
+    final minute = prefs.getInt('notif_minute') ?? 0;
+    await NotificationService.scheduleDailyReminder(hour: hour, minute: minute);
   }
 
   runApp(MyApp());
