@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/pages/auth/email_confirmation_page.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:tugas_uas/services/notification_service.dart';
+//import 'package:tugas_uas/services/notification_service.dart';
+import 'package:tugas_uas/pages/settings/notification_settings_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -28,8 +29,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
 
-  bool _isLoading = false;
-  bool _notifAktif = false;
+  // bool _isLoading = false;
+  // bool _notifAktif = false;
 
   ThemeMode _selectedTheme = ThemeMode.system;
 
@@ -41,10 +42,10 @@ class _SettingsPageState extends State<SettingsPage> {
     ThemeMode.system,
   ];
 
-  TimeOfDay _waktuNotifikasi = const TimeOfDay(
-    hour: 20,
-    minute: 0,
-  ); // default jam 8 malam
+  // TimeOfDay _waktuNotifikasi = const TimeOfDay(
+  //   hour: 20,
+  //   minute: 0,
+  // ); // default jam 8 malam
 
   @override
   void initState() {
@@ -52,8 +53,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadUserData();
     _loadThemeFromPrefs();
     _loadAccentColor();
-    _loadNotifikasiStatus();
-    _loadWaktuNotifikasi();
+    // _loadNotifikasiStatus();
+    // _loadWaktuNotifikasi();
   }
 
   // Mengambil data pengguna
@@ -95,22 +96,22 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _loadNotifikasiStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _notifAktif = prefs.getBool('notif_harian') ?? false;
-    });
-  }
+  // Future<void> _loadNotifikasiStatus() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     _notifAktif = prefs.getBool('notif_harian') ?? false;
+  //   });
+  // }
 
-  Future<void> _loadWaktuNotifikasi() async {
-    final prefs = await SharedPreferences.getInstance();
-    final hour = prefs.getInt('notif_hour') ?? 20;
-    final minute = prefs.getInt('notif_minute') ?? 0;
+  // Future<void> _loadWaktuNotifikasi() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final hour = prefs.getInt('notif_hour') ?? 20;
+  //   final minute = prefs.getInt('notif_minute') ?? 0;
 
-    setState(() {
-      _waktuNotifikasi = TimeOfDay(hour: hour, minute: minute);
-    });
-  }
+  //   setState(() {
+  //     _waktuNotifikasi = TimeOfDay(hour: hour, minute: minute);
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -168,70 +169,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 },
               ),
-              ExpansionTile(
+              ListTile(
                 leading: const Icon(Icons.notifications),
-                title: const Text('Notifikasi Harian'),
-                children: [
-                  SwitchListTile(
-                    title: const Text('Aktifkan Notifikasi'),
-                    value: _notifAktif,
-                    onChanged: (value) async {
-                      final prefs = await SharedPreferences.getInstance();
-                      setState(() => _notifAktif = value);
-                      await prefs.setBool('notif_harian', value);
-
-                      if (value) {
-                        await NotificationService.scheduleDailyReminder(
-                          hour: _waktuNotifikasi.hour,
-                          minute: _waktuNotifikasi.minute,
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Notifikasi diaktifkan'),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Notifikasi dimatikan')),
-                        );
-                      }
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.access_time),
-                    title: const Text('Jam Pengingat'),
-                    subtitle: Text(
-                      '${_waktuNotifikasi.format(context)} setiap hari',
+                title: const Text('Pemberitahuan'),
+                subtitle: const Text(
+                  'Atur pengingat harian, waktu, dan preferensi',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationSettingsPage(),
                     ),
-                    onTap: () async {
-                      final picked = await showTimePicker(
-                        context: context,
-                        initialTime: _waktuNotifikasi,
-                      );
-
-                      if (picked != null) {
-                        final prefs = await SharedPreferences.getInstance();
-                        setState(() => _waktuNotifikasi = picked);
-                        await prefs.setInt('notif_hour', picked.hour);
-                        await prefs.setInt('notif_minute', picked.minute);
-
-                        if (_notifAktif) {
-                          await NotificationService.scheduleDailyReminder(
-                            hour: picked.hour,
-                            minute: picked.minute,
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Notifikasi dijadwalkan ulang ke ${picked.format(context)}',
-                              ),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                  ),
-                ],
+                  );
+                },
               ),
 
               ListTile(
