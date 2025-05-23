@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/notification_service.dart';
 import 'package:tugas_uas/widgets/custom_snackbar.dart';
+import 'package:another_flushbar/flushbar.dart';
 
 class NotificationSettingsPage extends StatefulWidget {
   const NotificationSettingsPage({super.key});
@@ -20,6 +21,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   void initState() {
     super.initState();
     _loadPrefs();
+    _loadPinStatus();
   }
 
   Future<void> _loadPrefs() async {
@@ -30,6 +32,26 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       _reminderTime = TimeOfDay(
         hour: prefs.getInt('notif_hour') ?? 20,
         minute: prefs.getInt('notif_minute') ?? 0,
+      );
+    });
+  }
+
+  Future<void> _loadPinStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _pinToNotification = prefs.getBool('pin_notif') ?? false;
+    });
+
+    // (opsional) beri tahu pengguna status awal
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showCustomSnackBar(
+        context,
+        _pinToNotification
+            ? 'Pengingat saat ini disematkan'
+            : 'Pengingat tidak disematkan',
+        type: SnackBarType.info,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
       );
     });
   }
@@ -72,6 +94,23 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
               final prefs = await SharedPreferences.getInstance();
               setState(() => _pinToNotification = value);
               prefs.setBool('pin_notif', value);
+              if (value) {
+                showCustomSnackBar(
+                  context,
+                  'Pengingat disematkan ke bilah pemberitahuan',
+                  type: SnackBarType.success,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              } else {
+                showCustomSnackBar(
+                  context,
+                  'Pengingat tidak disematkan lagi',
+                  type: SnackBarType.success,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              }
             },
           ),
           SwitchListTile(
@@ -91,42 +130,56 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                   minute: _reminderTime.minute,
                 );
                 // ✅ Tampilkan SnackBar ketika aktif
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: const [
-                        Icon(Icons.notifications_active, color: Colors.white),
-                        SizedBox(width: 8),
-                        Expanded(child: Text('Notifikasi diaktifkan')),
-                      ],
-                    ),
-                    backgroundColor: Colors.green[600],
-                    duration: const Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                Flushbar(
+                  messageText: Row(
+                    children: const [
+                      Icon(Icons.notifications_active, color: Colors.white),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Notifikasi diaktifkan',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                );
+                  backgroundColor: Colors.green[600]!,
+                  duration: const Duration(seconds: 3),
+                  flushbarPosition:
+                      FlushbarPosition.TOP, // Ubah ke .TOP jika ingin di atas
+                  borderRadius: BorderRadius.circular(12),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  animationDuration: const Duration(milliseconds: 400),
+                ).show(context);
               } else {
                 // ❌ Tampilkan SnackBar ketika nonaktif
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: const [
-                        Icon(Icons.notifications_off, color: Colors.white),
-                        SizedBox(width: 8),
-                        Expanded(child: Text('Notifikasi dimatikan')),
-                      ],
-                    ),
-                    backgroundColor: Colors.red[600],
-                    duration: const Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                Flushbar(
+                  messageText: Row(
+                    children: const [
+                      Icon(Icons.notifications_active, color: Colors.white),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Notifikasi dimatikan',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ],
                   ),
-                );
+                  backgroundColor: Colors.red[600]!,
+                  duration: const Duration(seconds: 3),
+                  flushbarPosition:
+                      FlushbarPosition.TOP, // Ubah ke .TOP jika ingin di atas
+                  borderRadius: BorderRadius.circular(12),
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  animationDuration: const Duration(milliseconds: 400),
+                ).show(context);
               }
             },
           ),
