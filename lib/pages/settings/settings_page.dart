@@ -5,6 +5,7 @@ import 'package:tugas_uas/pages/auth/email_confirmation_page.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 //import 'package:tugas_uas/services/notification_service.dart';
 import 'package:tugas_uas/pages/settings/notification_settings_page.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -29,11 +30,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
 
-  // bool _isLoading = false;
-  // bool _notifAktif = false;
-
   ThemeMode _selectedTheme = ThemeMode.system;
-
   Color _primaryColor = Colors.blue; // Default color
 
   final List<ThemeMode> _themeOptions = [
@@ -42,10 +39,9 @@ class _SettingsPageState extends State<SettingsPage> {
     ThemeMode.system,
   ];
 
-  // TimeOfDay _waktuNotifikasi = const TimeOfDay(
-  //   hour: 20,
-  //   minute: 0,
-  // ); // default jam 8 malam
+  bool _notifAktif = false;
+  bool _pinToNotification = false;
+  TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
 
   @override
   void initState() {
@@ -53,8 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadUserData();
     _loadThemeFromPrefs();
     _loadAccentColor();
-    // _loadNotifikasiStatus();
-    // _loadWaktuNotifikasi();
+    _loadPrefs();
   }
 
   // Mengambil data pengguna
@@ -96,22 +91,17 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // Future<void> _loadNotifikasiStatus() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     _notifAktif = prefs.getBool('notif_harian') ?? false;
-  //   });
-  // }
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notifAktif = prefs.getBool('notif_harian') ?? false;
+      _pinToNotification = prefs.getBool('pin_notif') ?? false;
 
-  // Future<void> _loadWaktuNotifikasi() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   final hour = prefs.getInt('notif_hour') ?? 20;
-  //   final minute = prefs.getInt('notif_minute') ?? 0;
-
-  //   setState(() {
-  //     _waktuNotifikasi = TimeOfDay(hour: hour, minute: minute);
-  //   });
-  // }
+      final hour = prefs.getInt('notif_hour') ?? 20;
+      final minute = prefs.getInt('notif_minute') ?? 0;
+      _reminderTime = TimeOfDay(hour: hour, minute: minute);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -222,10 +212,16 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ),
                                     );
                                   } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Gagal ubah email: $e'),
-                                      ),
+                                    // ScaffoldMessenger.of(context).showSnackBar(
+                                    //   SnackBar(
+                                    //     content: Text('Gagal ubah email: $e'),
+                                    //   ),
+                                    // );
+                                    showCustomSnackBar(
+                                      context,
+                                      'Gagal ubah email: $e',
+                                      type: SnackBarType.error,
+                                      showAtTop: true,
                                     );
                                   }
                                 }
@@ -263,12 +259,18 @@ class _SettingsPageState extends State<SettingsPage> {
                                 final password =
                                     _passwordController.text.trim();
                                 if (password.length < 6) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Password minimal 6 karakter',
-                                      ),
-                                    ),
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   SnackBar(
+                                  //     content: Text(
+                                  //       'Password minimal 6 karakter',
+                                  //     ),
+                                  //   ),
+                                  // );
+                                  showCustomSnackBar(
+                                    context,
+                                    'Password minimal 6 karakter',
+                                    type: SnackBarType.warning,
+                                    showAtTop: true,
                                   );
                                   return;
                                 }
@@ -276,19 +278,31 @@ class _SettingsPageState extends State<SettingsPage> {
                                   await _supabase.auth.updateUser(
                                     UserAttributes(password: password),
                                   );
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        'Password berhasil diperbarui',
-                                      ),
-                                    ),
+                                  // Navigator.pop(context);
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   SnackBar(
+                                  //     content: Text(
+                                  //       'Password berhasil diperbarui',
+                                  //     ),
+                                  //   ),
+                                  // );
+                                  showCustomSnackBar(
+                                    context,
+                                    'Password berhasil diperbarui',
+                                    type: SnackBarType.success,
+                                    showAtTop: true,
                                   );
                                 } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Gagal ubah password: $e'),
-                                    ),
+                                  // ScaffoldMessenger.of(context).showSnackBar(
+                                  //   SnackBar(
+                                  //     content: Text('Gagal ubah password: $e'),
+                                  //   ),
+                                  // );
+                                  showCustomSnackBar(
+                                    context,
+                                    'Gagal ubah password: $e',
+                                    type: SnackBarType.error,
+                                    showAtTop: true,
                                   );
                                 }
                               },

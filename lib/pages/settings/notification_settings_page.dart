@@ -33,6 +33,10 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         hour: prefs.getInt('notif_hour') ?? 20,
         minute: prefs.getInt('notif_minute') ?? 0,
       );
+      debugPrint(
+        '>> prefs.getBool(notif_harian): ${prefs.getBool('notif_harian')}',
+      );
+      debugPrint('>> prefs.getBool(pin_notif): ${prefs.getBool('pin_notif')}');
     });
   }
 
