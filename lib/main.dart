@@ -11,6 +11,10 @@ import 'package:tugas_uas/splash/splash_page.dart';
 import 'package:tugas_uas/pages/settings/settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/notification_service.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:tugas_uas/locale_provider.dart';
 
 void main() async {
   await Supabase.initialize(
@@ -26,8 +30,10 @@ void main() async {
     final minute = prefs.getInt('notif_minute') ?? 0;
     await NotificationService.scheduleDailyReminder(hour: hour, minute: minute);
   }
+  final localeProvider = LocaleProvider();
+  await localeProvider.loadLocale(); // load dulu sebelum runApp
 
-  runApp(MyApp());
+  runApp(ChangeNotifierProvider.value(value: localeProvider, child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -97,6 +103,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context);
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: _themeNotifier,
       builder: (context, mode, _) {
@@ -104,6 +111,15 @@ class _MyAppState extends State<MyApp> {
           valueListenable: _accentColorNotifier,
           builder: (context, color, _) {
             return MaterialApp(
+              locale:
+                  localeProvider.locale, // dari SharedPreferences atau Provider
+              supportedLocales: const [Locale('en'), Locale('id')],
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
               title: 'Catatan Harian',
               debugShowCheckedModeBanner: false,
               // theme: ThemeData.light(),

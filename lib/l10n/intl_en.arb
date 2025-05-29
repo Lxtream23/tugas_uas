@@ -1,0 +1,15 @@
+{
+  "appTitle": "My Diary App",
+  "settings": "Settings",
+  "language": "Language",
+  "selectLanguage": "Select Language",
+  "accentColor": "Accent Color",
+  "notifications": "Notifications",
+  "notificationsDesk": "Set daily reminders, times, and preferences",
+  "Theme": "Dark Theme",
+  "Change Email": "Change Email",
+  "New email": "New email",
+  "Cancel": "Cancel",
+  "Failed to change email": "Failed to change email",
+  "Save": "Save"
+}

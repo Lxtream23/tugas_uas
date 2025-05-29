@@ -6,6 +6,9 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 //import 'package:tugas_uas/services/notification_service.dart';
 import 'package:tugas_uas/pages/settings/notification_settings_page.dart';
 import 'package:tugas_uas/widgets/custom_snackbar.dart';
+import 'package:provider/provider.dart';
+import 'package:tugas_uas/locale_provider.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -42,6 +45,8 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _notifAktif = false;
   bool _pinToNotification = false;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
+
+  String _selectedLanguage = 'id';
 
   @override
   void initState() {
@@ -103,10 +108,24 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  Future<void> _loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedLanguage = prefs.getString('language') ?? 'id';
+    });
+  }
+
+  Future<void> _saveLanguage(String langCode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('language', langCode);
+    setState(() => _selectedLanguage = langCode);
+    // Restart app atau panggil notify untuk update
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan Akun')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.settings)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -130,14 +149,14 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               ListTile(
                 leading: Icon(Icons.color_lens),
-                title: Text('Warna Aksen'),
+                title: Text(AppLocalizations.of(context)!.accentColor),
                 trailing: CircleAvatar(backgroundColor: _primaryColor),
                 onTap: () {
                   showDialog(
                     context: context,
                     builder: (context) {
                       return AlertDialog(
-                        title: const Text('Pilih Warna Aksen'),
+                        title: Text(AppLocalizations.of(context)!.accentColor),
                         content: SingleChildScrollView(
                           child: BlockPicker(
                             pickerColor: _primaryColor,
@@ -160,8 +179,33 @@ class _SettingsPageState extends State<SettingsPage> {
                 },
               ),
               ListTile(
+                title: Text(AppLocalizations.of(context)!.language),
+                trailing: DropdownButton<String>(
+                  value: context.watch<LocaleProvider>().locale.languageCode,
+                  onChanged: (value) {
+                    if (value != null) {
+                      context.read<LocaleProvider>().setLocale(value);
+                      showCustomSnackBar(
+                        context,
+                        'Bahasa diperbarui',
+                        type: SnackBarType.success,
+                        showAtTop: true,
+                      );
+                    }
+                  },
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'id',
+                      child: Text('Bahasa Indonesia'),
+                    ),
+                    DropdownMenuItem(value: 'en', child: Text('English')),
+                  ],
+                ),
+              ),
+
+              ListTile(
                 leading: const Icon(Icons.notifications),
-                title: const Text('Pemberitahuan'),
+                title: Text(AppLocalizations.of(context)!.notifications),
                 subtitle: const Text(
                   'Atur pengingat harian, waktu, dan preferensi',
                 ),
