@@ -15,6 +15,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final supabase = Supabase.instance.client;
+  bool _isSearching = false;
   List<DiaryEntry> diaryEntries = [];
   List<DiaryEntry> filteredEntries = [];
   final _searchController = TextEditingController();
@@ -203,21 +204,50 @@ class _HomePageState extends State<HomePage> {
             AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
-              leading: Builder(
-                builder:
-                    (context) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-              ),
-
+              title:
+                  _isSearching
+                      ? TextField(
+                        controller: _searchController,
+                        autofocus: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: 'Cari catatan...',
+                          hintStyle: TextStyle(color: Colors.white60),
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (_) => _onSearchChanged(),
+                      )
+                      : const Text('Catatan Saya'),
+              leading:
+                  _isSearching
+                      ? IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () {
+                          setState(() {
+                            _isSearching = false;
+                            _searchController.clear();
+                            filteredEntries = diaryEntries;
+                          });
+                        },
+                      )
+                      : Builder(
+                        builder:
+                            (context) => IconButton(
+                              icon: const Icon(Icons.menu),
+                              onPressed:
+                                  () => Scaffold.of(context).openDrawer(),
+                            ),
+                      ),
               actions: [
-                Icon(Icons.notifications, color: Colors.red),
-                SizedBox(width: 12),
-                Icon(Icons.search),
-                SizedBox(width: 8),
-                Icon(Icons.more_vert),
-                SizedBox(width: 12),
+                if (!_isSearching)
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      setState(() {
+                        _isSearching = true;
+                      });
+                    },
+                  ),
               ],
             ),
           ],
@@ -341,6 +371,10 @@ class _HomePageState extends State<HomePage> {
                                 setState(() => _showChallenge = false);
                                 _saveChallengePrefs();
                               },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.more_vert),
+                              onPressed: () {},
                             ),
                           ],
                         ),
