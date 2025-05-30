@@ -178,6 +178,81 @@ class _HomePageState extends State<HomePage> {
     await prefs.setInt('challenge_progress', _challengeProgress);
   }
 
+  void _showSortDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Center(
+            child: Material(
+              // ✅ TAMBAHKAN INI
+              borderRadius: BorderRadius.circular(16),
+              clipBehavior: Clip.antiAlias, // Biar sudut ikut membulat
+              color: Colors.white,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutBack,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(horizontal: 30),
+                child: IntrinsicWidth(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Sortir Catatan',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        leading: const Icon(Icons.arrow_downward),
+                        title: const Text('Terbaru'),
+                        onTap: () {
+                          setState(() {
+                            filteredEntries.sort(
+                              (a, b) => b.createdAt.compareTo(a.createdAt),
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.arrow_upward),
+                        title: const Text('Terlama'),
+                        onTap: () {
+                          setState(() {
+                            filteredEntries.sort(
+                              (a, b) => a.createdAt.compareTo(b.createdAt),
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.sort_by_alpha),
+                        title: const Text('Judul'),
+                        onTap: () {
+                          setState(() {
+                            filteredEntries.sort(
+                              (a, b) => a.title.compareTo(b.title),
+                            );
+                          });
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -248,6 +323,87 @@ class _HomePageState extends State<HomePage> {
                       });
                     },
                   ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.black),
+                  onSelected: (value) async {
+                    if (value == 'backup') {
+                      print('📦 Cadangkan data');
+                    } else if (value == 'sort') {
+                      // ⬇️ Tampilkan submenu sortir
+                      final RenderBox overlay =
+                          Overlay.of(context).context.findRenderObject()
+                              as RenderBox;
+
+                      final result = await showMenu<String>(
+                        context: context,
+                        position: RelativeRect.fromLTRB(
+                          overlay.size.width -
+                              40, // posisi mendekati kanan atas
+                          kToolbarHeight + 50, // di bawah AppBar
+                          0,
+                          0,
+                        ),
+                        items: [
+                          const PopupMenuItem(
+                            value: 'sort_latest',
+                            child: Text('⬇️ Sortir: Terbaru'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'sort_oldest',
+                            child: Text('⬆️ Sortir: Terlama'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'sort_title',
+                            child: Text('🔤 Sortir: Judul'),
+                          ),
+                        ],
+                        elevation: 8,
+                        color: Colors.white,
+                      );
+
+                      if (result == 'sort_latest') {
+                        setState(() {
+                          filteredEntries.sort(
+                            (a, b) => b.createdAt.compareTo(a.createdAt),
+                          );
+                        });
+                      } else if (result == 'sort_oldest') {
+                        setState(() {
+                          filteredEntries.sort(
+                            (a, b) => a.createdAt.compareTo(b.createdAt),
+                          );
+                        });
+                      } else if (result == 'sort_title') {
+                        setState(() {
+                          filteredEntries.sort(
+                            (a, b) => a.title.compareTo(b.title),
+                          );
+                        });
+                      }
+                    }
+                  },
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'backup',
+                          child: Text('📦 Cadangkan'),
+                        ),
+                        PopupMenuItem(
+                          onTap:
+                              () => Future.delayed(
+                                Duration.zero,
+                                () => _showSortDialog(context),
+                              ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: const [
+                              Text('📁 Sortir dengan'),
+                              Icon(Icons.chevron_right),
+                            ],
+                          ),
+                        ),
+                      ],
+                ),
               ],
             ),
           ],
