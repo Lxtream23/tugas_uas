@@ -4,12 +4,12 @@
   "language": "Language",
   "selectLanguage": "Select Language",
   "accentColor": "Accent Color",
-  "notifications": "Notifications",
-  "notificationsDesk": "Set daily reminders, times, and preferences",
-  "Theme": "Dark Theme",
-  "Change Email": "Change Email",
-  "New email": "New email",
-  "Cancel": "Cancel",
-  "Failed to change email": "Failed to change email",
-  "Save": "Save"
+  "notif": "Notifications",
+  "notifDesk": "Set daily reminders, times, and preferences",
+  "theme": "Dark Theme",
+  "changeEmail": "Change Email",
+  "newEmail": "New email",
+  "cancel": "Cancel",
+  "failedToChangeEmail": "Failed to change email",
+  "save": "Save"
 }

@@ -141,7 +141,44 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catatan Saya')),
+      //appBar: AppBar(title: const Text('Catatan Saya')),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(180),
+        child: Stack(
+          children: [
+            Container(
+              height: 180,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/header_mountain.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: Builder(
+                builder:
+                    (context) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                    ),
+              ),
+
+              actions: [
+                Icon(Icons.notifications, color: Colors.red),
+                SizedBox(width: 12),
+                Icon(Icons.search),
+                SizedBox(width: 8),
+                Icon(Icons.more_vert),
+                SizedBox(width: 12),
+              ],
+            ),
+          ],
+        ),
+      ),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -178,17 +215,52 @@ class _HomePageState extends State<HomePage> {
 
       body: Column(
         children: [
+          // Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: TextField(
+          //     controller: _searchController,
+          //     decoration: const InputDecoration(
+          //       hintText: 'Cari berdasarkan judul...',
+          //       border: OutlineInputBorder(),
+          //       prefixIcon: Icon(Icons.search),
+          //     ),
+          //   ),
+          // ),
+
+          // Widget Tantangan
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Cari berdasarkan judul...',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.search),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tantangan Kebiasaan 3 Hari',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Tulis jurnal selama 3 hari berturut-turut',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  Icon(Icons.card_giftcard, color: Colors.purple),
+                ],
               ),
             ),
           ),
+
+          // List Catatan
           Expanded(
             child:
                 isLoading
@@ -264,6 +336,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => _goToDetail(null),
         child: const Icon(Icons.add),

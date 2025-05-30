@@ -4,12 +4,13 @@
   "language": "Bahasa",
   "selectLanguage": "Pilih Bahasa",
   "accentColor": "Warna Aksen",
-  "notifications": "Pemberitahuan"
-  "notificationsDesk": "Atur pengingat harian, waktu, dan preferensi",
-  "Theme": "Tema Gelap",
-  "Change Email": "Ubah Email",
-  "New email": "Email baru",
-  "Cancel": "Batal",
-  "Failed to change email": "Gagal ubah email",
-  "Save": "Simpan"
+  "notif": "Pemberitahuan",
+  "notifDesk": "Atur pengingat harian, waktu, dan preferensi",
+  "theme": "Tema Gelap",
+  "changeEmail": "Ubah Email",
+  "newEmail": "Email baru",
+  "cancel": "Batal",
+  "failedToChangeEmail": "Gagal ubah email",
+  "save": "Simpan"
 }
+

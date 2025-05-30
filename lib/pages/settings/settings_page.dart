@@ -205,10 +205,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
               ListTile(
                 leading: const Icon(Icons.notifications),
-                title: Text(AppLocalizations.of(context)!.notifications),
-                subtitle: const Text(
-                  'Atur pengingat harian, waktu, dan preferensi',
-                ),
+                title: Text(AppLocalizations.of(context)!.notif),
+                subtitle: Text(AppLocalizations.of(context)!.notifDesk),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.push(
