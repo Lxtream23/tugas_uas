@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/diary_entry.dart';
+import '../../services/notification_service.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -18,12 +20,25 @@ class _HomePageState extends State<HomePage> {
   final _searchController = TextEditingController();
   bool isLoading = true;
   DiaryEntry? _lastDeletedEntry;
+  bool _showChallenge = true;
+  int _challengeProgress = 1; // misal, 1 dari 3 hari
+
+  double get _progress => _challengeProgress / 3;
+
+  Color getProgressColor(double value) {
+    if (value >= 1.0) return Colors.green;
+    if (value >= 0.5) return Colors.orange;
+    if (value > 0.0) return Colors.red;
+    return Colors.grey;
+  }
 
   @override
   void initState() {
     super.initState();
     _fetchDiaryEntries();
     _searchController.addListener(_onSearchChanged);
+    _loadChallengeProgress();
+    _loadChallengePrefs();
   }
 
   Future<void> _fetchDiaryEntries() async {
@@ -84,6 +99,15 @@ class _HomePageState extends State<HomePage> {
       if (result == true) {
         await Future.delayed(const Duration(milliseconds: 300));
         _fetchDiaryEntries();
+
+        if (_challengeProgress < 3) {
+          setState(() => _challengeProgress += 1);
+          _saveChallengePrefs();
+
+          if (_challengeProgress == 3) {
+            await NotificationService.showChallengeCompleted();
+          }
+        }
       }
     });
   }
@@ -130,6 +154,27 @@ class _HomePageState extends State<HomePage> {
         SnackBar(content: Text('Gagal mengembalikan catatan: $e')),
       );
     }
+  }
+
+  void _loadChallengeProgress() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _challengeProgress = prefs.getInt('challenge_progress') ?? 1;
+    });
+  }
+
+  void _loadChallengePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _showChallenge = prefs.getBool('show_challenge') ?? true;
+      _challengeProgress = prefs.getInt('challenge_progress') ?? 1;
+    });
+  }
+
+  Future<void> _saveChallengePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_challenge', _showChallenge);
+    await prefs.setInt('challenge_progress', _challengeProgress);
   }
 
   @override
@@ -226,38 +271,82 @@ class _HomePageState extends State<HomePage> {
           //     ),
           //   ),
           // ),
-
-          // Widget Tantangan
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Tantangan Kebiasaan 3 Hari',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+          //wigdet Tantangan
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child:
+                _showChallenge
+                    ? Padding(
+                      key: const ValueKey('challenge'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Tulis jurnal selama 3 hari berturut-turut',
-                        style: TextStyle(fontSize: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black12, blurRadius: 6),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Tantangan Kebiasaan 3 Hari',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  const Text(
+                                    'Tulis jurnal selama 3 hari berturut-turut',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TweenAnimationBuilder<double>(
+                                    tween: Tween<double>(
+                                      begin: 0,
+                                      end: _progress,
+                                    ),
+                                    duration: const Duration(milliseconds: 500),
+                                    builder: (context, value, _) {
+                                      return LinearProgressIndicator(
+                                        value: value,
+                                        backgroundColor: Colors.grey[200],
+                                        color: getProgressColor(value),
+                                        minHeight: 6,
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Progress: $_challengeProgress / 3',
+                                    style: TextStyle(
+                                      color: getProgressColor(_progress),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () {
+                                setState(() => _showChallenge = false);
+                                _saveChallengePrefs();
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
-                  Icon(Icons.card_giftcard, color: Colors.purple),
-                ],
-              ),
-            ),
+                    )
+                    : const SizedBox.shrink(),
           ),
 
           // List Catatan

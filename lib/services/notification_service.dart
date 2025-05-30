@@ -79,4 +79,22 @@ class NotificationService {
       print('❌ Gagal membatalkan notifikasi: $e');
     }
   }
+
+  static Future<void> showChallengeCompleted() async {
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        'challenge_channel',
+        'Tantangan',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+    );
+
+    await _notificationsPlugin.show(
+      1, // ID notifikasi
+      'Tantangan Selesai 🎉',
+      'Kamu telah menulis jurnal selama 3 hari berturut-turut!',
+      details,
+    );
+  }
 }
