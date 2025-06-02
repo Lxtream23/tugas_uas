@@ -33,6 +33,8 @@ class _HomePageState extends State<HomePage> {
     return Colors.grey;
   }
 
+  String _sortBy = 'terbaru'; // nilai default
+
   @override
   void initState() {
     super.initState();
@@ -40,6 +42,7 @@ class _HomePageState extends State<HomePage> {
     _searchController.addListener(_onSearchChanged);
     _loadChallengeProgress();
     _loadChallengePrefs();
+    _loadSortPreference();
   }
 
   Future<void> _fetchDiaryEntries() async {
@@ -179,70 +182,86 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _showSortDialog(BuildContext context) {
-    showDialog(
+    showGeneralDialog(
       context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Center(
-            child: Material(
-              // ✅ TAMBAHKAN INI
-              borderRadius: BorderRadius.circular(16),
-              clipBehavior: Clip.antiAlias, // Biar sudut ikut membulat
-              color: Colors.white,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutBack,
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.symmetric(horizontal: 30),
-                child: IntrinsicWidth(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Sortir Catatan',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+      barrierDismissible: true,
+      barrierLabel: 'Sort Dialog',
+      barrierColor: Colors.black54, // efek gelap di background
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (_, __, ___) {
+        return const SizedBox(); // kita render dialog di transitionBuilder
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+          reverseCurve: Curves.easeInBack,
+        );
+
+        return FadeTransition(
+          opacity: curvedAnimation,
+          child: ScaleTransition(
+            scale: curvedAnimation,
+            child: Center(
+              child: Material(
+                borderRadius: BorderRadius.circular(16),
+                clipBehavior: Clip.antiAlias,
+                color: Colors.white,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutBack,
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.symmetric(horizontal: 30),
+                  child: IntrinsicWidth(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Sortir Catatan',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListTile(
-                        leading: const Icon(Icons.arrow_downward),
-                        title: const Text('Terbaru'),
-                        onTap: () {
-                          setState(() {
-                            filteredEntries.sort(
-                              (a, b) => b.createdAt.compareTo(a.createdAt),
-                            );
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.arrow_upward),
-                        title: const Text('Terlama'),
-                        onTap: () {
-                          setState(() {
-                            filteredEntries.sort(
-                              (a, b) => a.createdAt.compareTo(b.createdAt),
-                            );
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.sort_by_alpha),
-                        title: const Text('Judul'),
-                        onTap: () {
-                          setState(() {
-                            filteredEntries.sort(
-                              (a, b) => a.title.compareTo(b.title),
-                            );
-                          });
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        ListTile(
+                          leading: const Icon(Icons.arrow_downward),
+                          title: const Text('Terbaru'),
+                          trailing:
+                              _sortBy == 'terbaru'
+                                  ? const Icon(Icons.check)
+                                  : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _applySort('terbaru');
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.arrow_upward),
+                          title: const Text('Terlama'),
+                          trailing:
+                              _sortBy == 'terlama'
+                                  ? const Icon(Icons.check)
+                                  : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _applySort('terlama');
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.sort_by_alpha),
+                          title: const Text('Judul'),
+                          trailing:
+                              _sortBy == 'judul'
+                                  ? const Icon(Icons.check)
+                                  : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            _applySort('judul');
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -251,6 +270,31 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  void _applySort(String sortBy) {
+    setState(() {
+      _sortBy = sortBy;
+      filteredEntries = [...diaryEntries];
+
+      if (sortBy == 'terbaru') {
+        filteredEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      } else if (sortBy == 'terlama') {
+        filteredEntries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      } else if (sortBy == 'judul') {
+        filteredEntries.sort((a, b) => a.title.compareTo(b.title));
+      }
+    });
+
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString('sort_by', sortBy);
+    });
+  }
+
+  Future<void> _loadSortPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final sortBy = prefs.getString('sort_by') ?? 'terbaru';
+    _applySort(sortBy);
   }
 
   @override
