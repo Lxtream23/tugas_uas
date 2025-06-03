@@ -9,6 +9,7 @@ import 'package:tugas_uas/pages/profile/profile_form_page.dart';
 import 'package:tugas_uas/pages/auth/register_page.dart';
 import 'package:tugas_uas/splash/splash_page.dart';
 import 'package:tugas_uas/pages/settings/settings_page.dart';
+import 'package:tugas_uas/pages/settings/backup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/notification_service.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -156,6 +157,7 @@ class _MyAppState extends State<MyApp> {
                     ),
                 '/profile-form':
                     (_) => const SessionGuard(child: ProfileFormPage()),
+                '/backup': (_) => const SessionGuard(child: BackupPage()),
               },
             );
           },

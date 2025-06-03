@@ -47,6 +47,10 @@ dependencies:
     sdk: flutter
   intl: any
   provider: ^6.1.5
+  googleapis: ^11.0.0
+  google_sign_in: ^6.1.0
+  http: ^0.13.6
+  file_picker: ^10.1.9
 
 dev_dependencies:
   flutter_test:
