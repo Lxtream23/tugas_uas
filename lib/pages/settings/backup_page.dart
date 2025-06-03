@@ -35,23 +35,23 @@ class _BackupPageState extends State<BackupPage> {
     });
   }
 
-  Future<void> _cadangkanSekarang() async {
-    await BackupService.generateBackupJson(context);
-  }
+  // Future<void> _cadangkanSekarang() async {
+  //   await BackupService.generateBackupJson(context);
+  // }
 
-  Future<void> _pulihkanDariFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-    );
-    if (result != null && result.files.single.path != null) {
-      final file = File(result.files.single.path!);
-      await BackupService.restoreFromBackupJson(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Data berhasil dipulihkan')),
-      );
-    }
-  }
+  // Future<void> _pulihkanDariFile() async {
+  //   final result = await FilePicker.platform.pickFiles(
+  //     type: FileType.custom,
+  //     allowedExtensions: ['json'],
+  //   );
+  //   if (result != null && result.files.single.path != null) {
+  //     final file = File(result.files.single.path!);
+  //     await BackupService.restoreBackup(context);
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('✅ Data berhasil dipulihkan')),
+  //     );
+  //   }
+  // }
 
   Future<void> _getUserEmail() async {
     // Ganti dengan logika untuk mendapatkan email pengguna
@@ -118,15 +118,15 @@ class _BackupPageState extends State<BackupPage> {
           const Divider(),
 
           ElevatedButton.icon(
-            onPressed: _cadangkanSekarang,
             icon: const Icon(Icons.cloud_upload),
             label: const Text('Cadangkan Sekarang'),
+            onPressed: () => BackupService.generateBackupJson(context),
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: _pulihkanDariFile,
             icon: const Icon(Icons.restore),
             label: const Text('Pulihkan dari File'),
+            onPressed: () => BackupService.restoreBackup(context),
           ),
 
           const Divider(),
