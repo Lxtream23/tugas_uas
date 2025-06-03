@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/backup_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -13,11 +14,18 @@ class BackupPage extends StatefulWidget {
 
 class _BackupPageState extends State<BackupPage> {
   bool _backupOtomatis = false;
+  String? _email;
 
   @override
   void initState() {
     super.initState();
     _loadPrefs();
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      setState(() {
+        _email = user.email;
+      });
+    }
   }
 
   Future<void> _loadPrefs() async {
@@ -56,6 +64,13 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
+  Future<void> _getUserEmail() async {
+    // Ganti dengan logika untuk mendapatkan email pengguna
+    // Misalnya, dari SharedPreferences atau layanan autentikasi
+    final user = Supabase.instance.client.auth.currentUser;
+    final email = user?.email ?? 'Tidak ada email';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,37 +78,28 @@ class _BackupPageState extends State<BackupPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.grey,
-                child: Icon(Icons.g_mobiledata, size: 32),
+          InkWell(
+            onTap: () {
+              // Tidak melakukan apa-apa
+            },
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.grey[300],
+                child: const Icon(Icons.g_mobiledata, size: 32),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
-                      'Backup ke Google Drive',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text('lh23072002@gmail.com'),
-                  ],
-                ),
-              ),
-              const Icon(Icons.more_vert),
-            ],
+              title: const Text('Backup ke Google Drive'),
+              subtitle: Text(_email ?? 'Memuat email...'),
+              //trailing: const Icon(Icons.more_vert),
+            ),
           ),
+          //const Icon(Icons.more_vert),
           const Divider(height: 32),
-
           const Text(
             'Data Backup',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          const Text('Sync terakhir: 2025/06/02 10:21:55'),
+          Text('Sync terakhir: ${DateTime.now().toString().split('.')[0]}'),
           const SizedBox(height: 16),
 
           SwitchListTile(
