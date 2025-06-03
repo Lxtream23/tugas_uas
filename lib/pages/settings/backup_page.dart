@@ -126,7 +126,32 @@ class _BackupPageState extends State<BackupPage> {
           ElevatedButton.icon(
             icon: const Icon(Icons.restore),
             label: const Text('Pulihkan dari File'),
-            onPressed: () => BackupService.restoreBackup(context),
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (context) => AlertDialog(
+                      title: const Text('Konfirmasi Pemulihan'),
+                      content: const Text(
+                        'Apakah kamu yakin ingin memulihkan catatan dari file backup?\nData lama bisa ditimpa.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Pulihkan'),
+                        ),
+                      ],
+                    ),
+              );
+
+              if (confirm == true) {
+                await BackupService.restoreBackup(context);
+              }
+            },
           ),
 
           const Divider(),
