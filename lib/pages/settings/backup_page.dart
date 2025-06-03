@@ -36,18 +36,7 @@ class _BackupPageState extends State<BackupPage> {
   }
 
   Future<void> _cadangkanSekarang() async {
-    final file = await BackupService.generateBackupJson();
-    if (file != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('✅ Backup berhasil dibuat')));
-      // (Opsional) Upload ke Google Drive:
-      // await GoogleDriveHelper.uploadBackup(file);
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('❌ Gagal membuat backup')));
-    }
+    await BackupService.generateBackupJson(context);
   }
 
   Future<void> _pulihkanDariFile() async {
@@ -57,7 +46,7 @@ class _BackupPageState extends State<BackupPage> {
     );
     if (result != null && result.files.single.path != null) {
       final file = File(result.files.single.path!);
-      await BackupService.restoreFromBackupJson(file);
+      await BackupService.restoreFromBackupJson(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Data berhasil dipulihkan')),
       );

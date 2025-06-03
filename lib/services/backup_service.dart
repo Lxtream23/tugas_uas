@@ -1,14 +1,17 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show File, Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/material.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:file_picker/file_picker.dart';
 
 class BackupService {
-  // ✅ Backup ke file JSON
-  static Future<File?> generateBackupJson() async {
+  static Future<void> generateBackupJson(BuildContext context) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return null;
+      if (user == null) throw Exception('User belum login');
 
       final response = await Supabase.instance.client
           .from('diary_entries')
@@ -16,45 +19,88 @@ class BackupService {
           .eq('user_id', user.id);
 
       final jsonString = jsonEncode(response);
-      final dir = await getApplicationDocumentsDirectory();
-      final file = File(
-        '${dir.path}/backup_diary_${DateTime.now().millisecondsSinceEpoch}.json',
-      );
-      await file.writeAsString(jsonString);
-      return file;
+      final filename =
+          'backup_diary_${DateTime.now().millisecondsSinceEpoch}.json';
+
+      if (kIsWeb) {
+        // ✅ WEB: Unduh file via anchor
+        final bytes = utf8.encode(jsonString);
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor =
+            html.AnchorElement(href: url)
+              ..setAttribute('download', filename)
+              ..click();
+        html.Url.revokeObjectUrl(url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('✅ File berhasil diunduh')),
+        );
+      } else {
+        // ✅ ANDROID / iOS / macOS
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/$filename');
+        await file.writeAsString(jsonString);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ File tersimpan di ${file.path}')),
+        );
+      }
     } catch (e) {
       print('❌ Gagal backup: $e');
-      return null;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ Gagal backup: $e')));
     }
   }
 
-  // ✅ Restore dari file JSON
-  static Future<void> restoreFromBackupJson(File file) async {
+  static Future<void> restoreFromBackupJson(BuildContext context) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return;
+      if (user == null) throw Exception('User belum login');
 
-      final jsonString = await file.readAsString();
-      final List<dynamic> data = jsonDecode(jsonString);
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: kIsWeb, // WEB: baca bytes
+      );
 
-      // Opsional: hapus semua data lama
-      await Supabase.instance.client
-          .from('diary_entries')
-          .delete()
-          .eq('user_id', user.id);
+      if (result == null) throw Exception('Tidak ada file dipilih');
 
-      for (final entry in data) {
-        await Supabase.instance.client.from('diary_entries').insert({
-          'title': entry['title'],
-          'content': entry['content'],
+      String jsonContent;
+
+      if (kIsWeb) {
+        // ✅ WEB: Ambil dari bytes
+        final bytes = result.files.first.bytes;
+        if (bytes == null) throw Exception('Gagal baca file');
+        jsonContent = utf8.decode(bytes);
+      } else {
+        // ✅ ANDROID: Baca dari path
+        final filePath = result.files.first.path;
+        if (filePath == null) throw Exception('Path file tidak ditemukan');
+        final file = File(filePath);
+        jsonContent = await file.readAsString();
+      }
+
+      final List<dynamic> data = jsonDecode(jsonContent);
+
+      for (final item in data) {
+        await Supabase.instance.client.from('diary_entries').upsert({
+          'id': item['id'],
           'user_id': user.id,
-          'created_at': entry['created_at'],
+          'title': item['title'],
+          'content': item['content'],
+          'created_at': item['created_at'],
         });
       }
 
-      print('✅ Berhasil memulihkan ${data.length} catatan');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Data berhasil dipulihkan')),
+      );
     } catch (e) {
-      print('❌ Gagal restore: $e');
+      print('❌ Gagal pulihkan data: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('❌ Gagal pulihkan: $e')));
     }
   }
 }
