@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/diary_entry.dart';
 import '../../services/notification_service.dart';
+import '../../services/backup_service.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -43,6 +44,46 @@ class _HomePageState extends State<HomePage> {
     _loadChallengeProgress();
     _loadChallengePrefs();
     _loadSortPreference();
+    _cekBackupOtomatis();
+    _cekBackupOtomatisSekaliSehari();
+  }
+
+  Future<void> _cekBackupOtomatis() async {
+    await Future.delayed(const Duration(seconds: 2)); // ✅ Delay 2 detik
+
+    final prefs = await SharedPreferences.getInstance();
+    final aktif = prefs.getBool('backup_otomatis') ?? false;
+
+    if (aktif) {
+      await BackupService.generateBackupJson(context);
+    }
+  }
+
+  Future<void> _cekBackupOtomatisSekaliSehari() async {
+    final prefs = await SharedPreferences.getInstance();
+    final aktif = prefs.getBool('backup_otomatis') ?? false;
+
+    if (!aktif) return;
+
+    // Ambil tanggal terakhir backup
+    final lastBackup = prefs.getString('last_backup_date');
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+
+    if (lastBackup != today) {
+      // Tambahkan delay opsional
+      await Future.delayed(const Duration(seconds: 2));
+
+      // Jalankan backup
+      await BackupService.generateBackupJson(context);
+
+      // Simpan tanggal hari ini
+      prefs.setString('last_backup_date', today);
+
+      // (Opsional) Tampilkan notifikasi sukses
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Backup otomatis berhasil')),
+      );
+    }
   }
 
   Future<void> _fetchDiaryEntries() async {
