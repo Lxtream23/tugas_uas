@@ -17,6 +17,7 @@ class BackupPage extends StatefulWidget {
 class _BackupPageState extends State<BackupPage> {
   bool _backupOtomatis = false;
   String? _email;
+  DateTime? _lastSyncTime;
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _BackupPageState extends State<BackupPage> {
         _email = user.email;
       });
     }
+    _loadLastSyncTime();
   }
 
   Future<void> _loadPrefs() async {
@@ -37,29 +39,21 @@ class _BackupPageState extends State<BackupPage> {
     });
   }
 
-  // Future<void> _cadangkanSekarang() async {
-  //   await BackupService.generateBackupJson(context);
-  // }
-
-  // Future<void> _pulihkanDariFile() async {
-  //   final result = await FilePicker.platform.pickFiles(
-  //     type: FileType.custom,
-  //     allowedExtensions: ['json'],
-  //   );
-  //   if (result != null && result.files.single.path != null) {
-  //     final file = File(result.files.single.path!);
-  //     await BackupService.restoreBackup(context);
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('✅ Data berhasil dipulihkan')),
-  //     );
-  //   }
-  // }
-
   Future<void> _getUserEmail() async {
     // Ganti dengan logika untuk mendapatkan email pengguna
     // Misalnya, dari SharedPreferences atau layanan autentikasi
     final user = Supabase.instance.client.auth.currentUser;
     final email = user?.email ?? 'Tidak ada email';
+  }
+
+  Future<void> _loadLastSyncTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final last = prefs.getString('last_sync');
+    if (last != null) {
+      setState(() {
+        _lastSyncTime = DateTime.tryParse(last);
+      });
+    }
   }
 
   @override
@@ -94,18 +88,35 @@ class _BackupPageState extends State<BackupPage> {
                 'backup_diary.json',
                 jsonContent,
               );
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(
+                'last_sync',
+                DateTime.now().toIso8601String(),
+              );
+
+              setState(() {
+                _lastSyncTime = DateTime.now();
+              });
             },
           ),
           //const Icon(Icons.more_vert),
-          const Divider(height: 32),
-          const Text(
-            'Data Backup',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          ListTile(
+            title: const Text('Data Backup'),
+            subtitle: Text(
+              _lastSyncTime != null
+                  ? 'Sync terakhir: ${_lastSyncTime!.toLocal().toString().split('.')[0]}'
+                  : 'Belum ada sync',
+            ),
           ),
-          const SizedBox(height: 4),
-          Text('Sync terakhir: ${DateTime.now().toString().split('.')[0]}'),
-          const SizedBox(height: 16),
 
+          const Divider(height: 32),
+          // const Text(
+          //   'Data Backup',
+          //   style: TextStyle(fontWeight: FontWeight.bold),
+          // ),
+          // const SizedBox(height: 4),
+          // Text('Sync terakhir: ${DateTime.now().toString().split('.')[0]}'),
+          // const SizedBox(height: 16),
           SwitchListTile(
             value: _backupOtomatis,
             onChanged: (val) async {
