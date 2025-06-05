@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/backup_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/services/drive_backup_service.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -67,19 +69,32 @@ class _BackupPageState extends State<BackupPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          InkWell(
-            onTap: () {
-              // Tidak melakukan apa-apa
-            },
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.grey[300],
-                child: const Icon(Icons.g_mobiledata, size: 32),
-              ),
-              title: const Text('Backup ke Google Drive'),
-              subtitle: Text(_email ?? 'Memuat email...'),
-              //trailing: const Icon(Icons.more_vert),
+          ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.grey[300],
+              child: const Icon(Icons.g_mobiledata, size: 32),
             ),
+            title: const Text('Backup ke Google Drive'),
+            subtitle: Text(_email ?? 'Memuat email...'),
+            onTap: () async {
+              final user = Supabase.instance.client.auth.currentUser;
+              if (user == null) return;
+
+              // Ambil data catatan dari Supabase
+              final data = await Supabase.instance.client
+                  .from('diary_entries')
+                  .select()
+                  .eq('user_id', user.id);
+
+              final jsonContent = jsonEncode(data);
+
+              // 🔁 Upload ke Google Drive
+              await GoogleDriveHelper.uploadToDrive(
+                context,
+                'backup_diary.json',
+                jsonContent,
+              );
+            },
           ),
           //const Icon(Icons.more_vert),
           const Divider(height: 32),

@@ -47,12 +47,14 @@ dependencies:
     sdk: flutter
   intl: any
   provider: ^6.1.5
-  googleapis: ^11.0.0
-  google_sign_in: ^6.1.0
+  googleapis: ^13.1.0
+  google_sign_in: ^6.1.5
+  googleapis_auth: ^1.4.0
   http: ^0.13.6
   file_picker: ^10.1.9
   path_provider: ^2.1.1
   universal_html: ^2.2.4
+  universal_io: ^2.2.2 # untuk deteksi platform
 
 dev_dependencies:
   flutter_test:
