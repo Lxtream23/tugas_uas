@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _cekBackupOtomatis() async {
     await Future.delayed(const Duration(seconds: 2)); // ✅ Delay 2 detik
-
+    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final aktif = prefs.getBool('backup_otomatis') ?? false;
 
