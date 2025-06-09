@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/backup_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tugas_uas/services/drive_backup_service.dart';
+import 'package:tugas_uas/services/drive_backup_service.dart' as drive_backup;
+import 'package:tugas_uas/services/google_drive_helper.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:flutter/foundation.dart';
+import 'package:tugas_uas/alarm_callback.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -18,6 +23,7 @@ class _BackupPageState extends State<BackupPage> {
   bool _backupOtomatis = false;
   String? _email;
   DateTime? _lastSyncTime;
+  Timer? _backupTimer;
 
   @override
   void initState() {
@@ -30,6 +36,13 @@ class _BackupPageState extends State<BackupPage> {
       });
     }
     _loadLastSyncTime();
+    _setupPeriodicBackup();
+  }
+
+  @override
+  void dispose() {
+    _backupTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadPrefs() async {
@@ -54,6 +67,54 @@ class _BackupPageState extends State<BackupPage> {
         _lastSyncTime = DateTime.tryParse(last);
       });
     }
+  }
+
+  void _setupPeriodicBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isAutoBackup = prefs.getBool('backup_otomatis') ?? false;
+
+    if (!isAutoBackup) return;
+
+    // Cek waktu terakhir backup
+    final lastBackupStr = prefs.getString('last_sync');
+    final lastBackup =
+        lastBackupStr != null ? DateTime.tryParse(lastBackupStr) : null;
+
+    final now = DateTime.now();
+
+    // Kalau belum pernah atau sudah lebih dari 1 hari
+    if (lastBackup == null || now.difference(lastBackup).inHours >= 24) {
+      final backupFile = await BackupService.generateBackupJson(context);
+      if (backupFile != null) {
+        await GoogleDriveHelper.uploadBackupJson(
+          context: context,
+          fileName: 'backup_${now.toIso8601String().split('T').first}.json',
+          jsonData: await backupFile.readAsString(),
+        );
+        await prefs.setString('last_sync', now.toIso8601String());
+
+        if (mounted) {
+          setState(() {
+            _lastSyncTime = now;
+          });
+        }
+      }
+    }
+
+    // Opsional: Siapkan backup harian berikutnya (kalau app tetap terbuka)
+    _backupTimer?.cancel();
+    _backupTimer = Timer.periodic(const Duration(hours: 24), (_) async {
+      final backupFile = await BackupService.generateBackupJson(context);
+      if (backupFile != null) {
+        await GoogleDriveHelper.uploadBackupJson(
+          context: context,
+          fileName:
+              'backup_${DateTime.now().toIso8601String().split('T').first}.json',
+          jsonData: await backupFile.readAsString(),
+        );
+        await prefs.setString('last_sync', DateTime.now().toIso8601String());
+      }
+    });
   }
 
   @override
@@ -83,10 +144,10 @@ class _BackupPageState extends State<BackupPage> {
               final jsonContent = jsonEncode(data);
 
               // 🔁 Upload ke Google Drive
-              await GoogleDriveHelper.uploadToDrive(
-                context,
-                'backup_diary.json',
-                jsonContent,
+              await GoogleDriveHelper.uploadBackupJson(
+                context: context,
+                fileName: 'backup_diary.json',
+                jsonData: jsonContent,
               );
               final prefs = await SharedPreferences.getInstance();
               await prefs.setString(
@@ -110,13 +171,6 @@ class _BackupPageState extends State<BackupPage> {
           ),
 
           const Divider(height: 32),
-          // const Text(
-          //   'Data Backup',
-          //   style: TextStyle(fontWeight: FontWeight.bold),
-          // ),
-          // const SizedBox(height: 4),
-          // Text('Sync terakhir: ${DateTime.now().toString().split('.')[0]}'),
-          // const SizedBox(height: 16),
           SwitchListTile(
             value: _backupOtomatis,
             onChanged: (val) async {
@@ -124,12 +178,33 @@ class _BackupPageState extends State<BackupPage> {
               final prefs = await SharedPreferences.getInstance();
               prefs.setBool('backup_otomatis', val);
 
+              if (!kIsWeb && Platform.isAndroid) {
+                if (val) {
+                  await AndroidAlarmManager.periodic(
+                    const Duration(days: 1),
+                    0, // ID alarm
+                    alarmBackupCallback,
+                    startAt: DateTime.now().add(const Duration(seconds: 10)),
+                    exact: true,
+                    wakeup: true,
+                    rescheduleOnReboot: true,
+                  );
+                } else {
+                  await AndroidAlarmManager.cancel(0);
+                }
+              }
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
                     val
                         ? '✅ Backup otomatis diaktifkan'
                         : '❌ Backup otomatis dimatikan',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               );

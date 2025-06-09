@@ -55,6 +55,8 @@ dependencies:
   path_provider: ^2.1.1
   universal_html: ^2.2.4
   universal_io: ^2.2.2 # untuk deteksi platform
+  android_alarm_manager_plus: ^3.0.3
+
 
 dev_dependencies:
   flutter_test:

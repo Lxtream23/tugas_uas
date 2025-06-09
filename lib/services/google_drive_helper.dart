@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http_parser/http_parser.dart';
 
 class GoogleAuthClient extends http.BaseClient {
   final Map<String, String> _headers;
@@ -68,6 +70,42 @@ class GoogleDriveHelper {
           SnackBar(content: Text('❌ Gagal upload ke Google Drive: $e')),
         );
       }
+    }
+  }
+
+  static Future<void> uploadBackupJsonSilently({
+    required String fileName,
+    required String jsonData,
+  }) async {
+    // Gunakan access token dari SharedPreferences (simpan saat login)
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    if (token == null) return;
+
+    final uri = Uri.parse(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    );
+
+    final request = http.MultipartRequest('POST', uri);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    request.fields['metadata'] = json.encode({
+      'name': fileName,
+      'mimeType': 'application/json',
+    });
+
+    request.files.add(
+      http.MultipartFile.fromString(
+        'file',
+        jsonData,
+        filename: fileName,
+        contentType: MediaType('application', 'json'),
+      ),
+    );
+
+    final response = await request.send();
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      print('❌ Gagal upload background: ${response.statusCode}');
     }
   }
 }

@@ -16,6 +16,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:tugas_uas/locale_provider.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'dart:io' if (dart.library.html) 'dart:html' show window;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform;
 
 void main() async {
   await Supabase.initialize(
@@ -33,6 +36,10 @@ void main() async {
   }
   final localeProvider = LocaleProvider();
   await localeProvider.loadLocale(); // load dulu sebelum runApp
+
+  if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
+    await AndroidAlarmManager.initialize();
+  }
 
   runApp(ChangeNotifierProvider.value(value: localeProvider, child: MyApp()));
 }

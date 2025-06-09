@@ -6,11 +6,13 @@ import 'package:universal_html/html.dart' as html;
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tugas_uas/services/google_drive_helper.dart';
 
 class BackupService {
   /// Backup: Android/iOS → simpan ke file
   ///         Web → unduh JSON
-  static Future<void> generateBackupJson(BuildContext context) async {
+  static Future<File?> generateBackupJson(BuildContext? context) async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) throw Exception('User belum login');
@@ -34,23 +36,32 @@ class BackupService {
               ..click();
         html.Url.revokeObjectUrl(url);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ File berhasil diunduh')),
-        );
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('✅ File berhasil diunduh')),
+          );
+        }
+        return null;
       } else {
         final dir = await getApplicationDocumentsDirectory();
         final file = File('${dir.path}/$filename');
         await file.writeAsString(jsonString);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('✅ File tersimpan di: ${file.path}')),
-        );
+        if (context != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('✅ File tersimpan di: ${file.path}')),
+          );
+        }
+        return file;
       }
     } catch (e) {
       print('❌ Gagal backup: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('❌ Gagal backup: $e')));
+      if (context != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('❌ Gagal backup: $e')));
+      }
+      return null;
     }
   }
 
@@ -142,5 +153,24 @@ class BackupService {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('✅ Data berhasil dipulihkan')));
+  }
+
+  static Future<void> backgroundBackup() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isAuto = prefs.getBool('backup_otomatis') ?? false;
+    if (!isAuto) return;
+
+    final file = await generateBackupJson(null);
+    if (file == null) return;
+
+    final json = await file.readAsString();
+
+    // Upload ke Google Drive
+    await GoogleDriveHelper.uploadBackupJsonSilently(
+      fileName: 'backup_auto_${DateTime.now().toIso8601String()}.json',
+      jsonData: json,
+    );
+
+    await prefs.setString('last_sync', DateTime.now().toIso8601String());
   }
 }
