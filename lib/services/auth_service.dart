@@ -22,14 +22,16 @@ class AuthService {
           serverClientId:
               '658021506260-v1ob4ot2n21akugrl76itjjfr5tckitr.apps.googleusercontent.com',
         );
+        await googleSignIn.signOut(); // ⬅️ Hapus sesi sebelumnya
         final account = await googleSignIn.signIn();
 
         if (account == null) return;
-        print('✅ Akun: ${account.email}');
+        // print('✅ Akun: ${account.email}');
+        // print('🪪 AccessToken: ${auth.accessToken}');
+        // print('🪪 IDToken: ${auth.idToken}');
+        // print('🧪 Platform: ${kIsWeb ? "Web" : "Android/iOS"}');
+
         final auth = await account.authentication;
-        print('🪪 AccessToken: ${auth.accessToken}');
-        print('🪪 IDToken: ${auth.idToken}');
-        print('🧪 Platform: ${kIsWeb ? "Web" : "Android/iOS"}');
 
         if (auth.idToken == null || auth.accessToken == null) {
           print('❌ Token Google null');
