@@ -13,6 +13,7 @@ class AuthService {
         await Supabase.instance.client.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: 'http://localhost:62976', // ganti dengan URL kamu
+          queryParams: {'prompt': 'select_account'}, // ⬅️ Paksa pilih akun
         );
         // On web, Supabase handles the redirect and authentication.
         return;
@@ -26,12 +27,11 @@ class AuthService {
         final account = await googleSignIn.signIn();
 
         if (account == null) return;
-        // print('✅ Akun: ${account.email}');
-        // print('🪪 AccessToken: ${auth.accessToken}');
-        // print('🪪 IDToken: ${auth.idToken}');
-        // print('🧪 Platform: ${kIsWeb ? "Web" : "Android/iOS"}');
-
         final auth = await account.authentication;
+        print('✅ Akun: ${account.email}');
+        print('🪪 AccessToken: ${auth.accessToken}');
+        print('🪪 IDToken: ${auth.idToken}');
+        print('🧪 Platform: ${kIsWeb ? "Web" : "Android/iOS"}');
 
         if (auth.idToken == null || auth.accessToken == null) {
           print('❌ Token Google null');

@@ -71,12 +71,7 @@ class _LoginPageState extends State<LoginPage> {
             _isLoading
                 ? const CircularProgressIndicator()
                 : ElevatedButton(onPressed: _login, child: const Text('Login')),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register');
-              },
-              child: const Text('Belum punya akun? Register'),
-            ),
+
             ElevatedButton.icon(
               icon: const Icon(Icons.g_mobiledata),
               label: const Text("Login dengan Google"),
@@ -85,6 +80,12 @@ class _LoginPageState extends State<LoginPage> {
                 foregroundColor: Colors.black,
               ),
               onPressed: () => AuthService.signInWithGoogle(context),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/register');
+              },
+              child: const Text('Belum punya akun? Register'),
             ),
           ],
         ),
