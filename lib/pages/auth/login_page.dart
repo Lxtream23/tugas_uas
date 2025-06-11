@@ -27,7 +27,11 @@ class _LoginPageState extends State<LoginPage> {
       if (response.user != null) {
         // Navigasi ke halaman utama setelah login
         if (mounted) {
+          print('✅ Login berhasil: ${response.user?.email}');
           Navigator.pushReplacementNamed(context, '/home');
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Login berhasil!")));
         }
       }
     } on AuthException catch (e) {

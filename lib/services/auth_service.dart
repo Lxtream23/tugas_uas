@@ -46,14 +46,19 @@ class AuthService {
         );
 
         if (response.session != null) {
+          print('✅ Login Google berhasil: ${response.user?.email}');
+          // Navigasi ke halaman utama setelah login
           Navigator.pushReplacementNamed(context, '/home');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login menggunakan Google berhasil')),
+          );
         }
       }
     } catch (e) {
       print('❌ Login Google gagal: $e');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login Google gagal')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login menggunakan Google gagal')),
+      );
     }
   }
 }
