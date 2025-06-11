@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,6 +72,15 @@ class _LoginPageState extends State<LoginPage> {
                 Navigator.pushNamed(context, '/register');
               },
               child: const Text('Belum punya akun? Register'),
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.g_mobiledata),
+              label: const Text("Login dengan Google"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => AuthService.signInWithGoogle(context),
             ),
           ],
         ),

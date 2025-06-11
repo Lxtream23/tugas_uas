@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "990772174048",
+    "project_id": "catatan-harian-c2af7",
+    "storage_bucket": "catatan-harian-c2af7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:990772174048:android:1eeb341ff21a1fe1cf0485",
+        "android_client_info": {
+          "package_name": "com.example.catatanharianapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDF0cBGSPAA_I_rBVtQpJDf_wLCBVvpyJg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
