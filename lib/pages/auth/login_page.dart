@@ -75,6 +75,12 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                SvgPicture.asset(
+                  'assets/logo/notexa_logo.svg',
+                  width: 150,
+                  height: 150,
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'Login',
                   style: GoogleFonts.poppins(

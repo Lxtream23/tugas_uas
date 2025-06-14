@@ -89,6 +89,7 @@ flutter:
     - assets/avatars/avatar10.png
     - assets/images/header_mountain.jpg
     - assets/icons/google_icon.svg
+    - assets/logo/notexa_logo.svg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
