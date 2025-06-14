@@ -96,6 +96,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   generate: true
+  #gen:
+    #synthetic-package: false
 
   # To add assets to your application, add an assets section, like this:
   # assets:
