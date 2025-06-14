@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
@@ -15,6 +16,7 @@ class _DetailPageState extends State<DetailPage> {
   bool _isLoading = false;
   Map? _entry;
   Map<String, dynamic>? _lastDeletedEntry;
+  DateTime? _selectedDate;
 
   @override
   void didChangeDependencies() {
@@ -161,6 +163,22 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  void _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -171,43 +189,173 @@ class _DetailPageState extends State<DetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
-        actions: [
-          if (_entry != null)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              tooltip: 'Hapus',
-              onPressed: _deleteEntry,
-            ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      // appBar: AppBar(
+      //   title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
+
+      //   // actions: [
+      //   //   if (_entry != null)
+      //   //     IconButton(
+      //   //       icon: const Icon(Icons.delete),
+      //   //       tooltip: 'Hapus',
+      //   //       onPressed: _deleteEntry,
+      //   //     ),
+      //   // ],
+      // ),
+      backgroundColor: const Color(0xFFDCEEFF), // biru muda
+      body: SafeArea(
+        child: Stack(
           children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: 'Judul'),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                decoration: const InputDecoration(labelText: 'Isi Catatan'),
-                maxLines: null,
-                expands: true,
-                keyboardType: TextInputType.multiline,
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Bar atas
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      // Text(
+                      //   _entry == null ? 'Tambah Catatan' : 'Edit Catatan',
+                      //   style: const TextStyle(
+                      //     fontSize: 20,
+                      //     fontWeight: FontWeight.bold,
+                      //   ),
+                      // ),
+                      ElevatedButton(
+                        onPressed: _isLoading ? null : _saveEntry,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                        ),
+                        child:
+                            _isLoading
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                                : const Text(
+                                  'SIMPAN',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Tanggal
+                  Row(
+                    children: const [
+                      Text(
+                        '14',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Jun 2025',
+                        style: TextStyle(fontSize: 20, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Judul
+                  TextField(
+                    controller: _titleController,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: 'Judul',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  // Isi catatan
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _contentController,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      hintText: 'Tulis lebih banyak di sini...',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _saveEntry,
-              child:
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text(_entry == null ? 'Simpan' : 'Perbarui'),
+            // Emoji mood
+            Positioned(
+              top: 60,
+              right: 16,
+              child: const CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.orangeAccent,
+                child: Text('😐', style: TextStyle(fontSize: 24)),
+              ),
             ),
+            // Bottom bar icon
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: const [
+                    Icon(Icons.line_weight),
+                    Icon(Icons.image),
+                    Icon(Icons.star_border),
+                    Icon(Icons.emoji_emotions),
+                    Icon(Icons.text_fields),
+                    Icon(Icons.format_list_bulleted),
+                    Icon(Icons.label_outline),
+                    Icon(Icons.call),
+                    Icon(Icons.mic),
+                  ],
+                ),
+              ),
+            ),
+            // Tombol simpan
+            // SizedBox(
+            //   width: double.infinity,
+            //   child: ElevatedButton(
+            //     onPressed: _isLoading ? null : _saveEntry,
+            //     child:
+            //         _isLoading
+            //             ? const CircularProgressIndicator()
+            //             : Text(_entry == null ? 'Simpan' : 'Perbarui'),
+
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: const Color(0xFF6C63FF),
+            //       padding: const EdgeInsets.symmetric(vertical: 16),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
