@@ -20,6 +20,7 @@ class _DetailPageState extends State<DetailPage> {
   //String? _entryId;
 
   bool _isInitialized = false;
+  DateTime? _entryDate;
 
   @override
   void didChangeDependencies() {
@@ -32,6 +33,10 @@ class _DetailPageState extends State<DetailPage> {
         _titleController.text = _entry!['title'] ?? '';
         _contentController.text = _entry!['content'] ?? '';
         _selectedEmoji = _entry!['emoji'] ?? '';
+        _entryDate =
+            DateTime.tryParse(_entry!['created_at'] ?? '') ?? DateTime.now();
+      } else {
+        _entryDate = DateTime.now();
       }
       _isInitialized = true;
     }
@@ -256,6 +261,30 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  String _formatDate(DateTime date) {
+    // Format sesuai kebutuhan, misal: 14 Juni 2025
+    return "${date.day} ${_monthName(date.month)} ${date.year}";
+  }
+
+  String _monthName(int month) {
+    const bulan = [
+      '',
+      'Januari',
+      'Februari',
+      'Maret',
+      'April',
+      'Mei',
+      'Juni',
+      'Juli',
+      'Agustus',
+      'September',
+      'Oktober',
+      'November',
+      'Desember',
+    ];
+    return bulan[month];
+  }
+
   @override
   Widget build(BuildContext context) {
     print("Build tampilan emoji: $_selectedEmoji");
@@ -329,30 +358,45 @@ class _DetailPageState extends State<DetailPage> {
                   const SizedBox(height: 8),
                   // Tanggal
                   Row(
-                    children: const [
+                    children: [
                       Text(
-                        '14',
-                        style: TextStyle(
-                          fontSize: 32,
+                        '${_entryDate!.day}',
+                        style: const TextStyle(
+                          fontSize: 32, // Ukuran besar untuk hari
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Text(
-                        'Jun 2025',
-                        style: TextStyle(fontSize: 20, color: Colors.black),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _monthName(_entryDate!.month),
+                            style: const TextStyle(
+                              fontSize: 16, // Ukuran kecil untuk bulan
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            '${_entryDate!.year}',
+                            style: const TextStyle(
+                              fontSize: 16, // Sama dengan bulan
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 16),
                   // Judul
                   TextField(
                     controller: _titleController,
                     style: const TextStyle(
-                      fontSize: 24,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                      color: Colors.black,
                     ),
                     decoration: const InputDecoration(
                       hintText: 'Judul',
