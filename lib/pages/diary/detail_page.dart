@@ -9,7 +9,7 @@ class DetailPage extends StatefulWidget {
   State<DetailPage> createState() => _DetailPageState();
 }
 
-class _DetailPageState extends State<DetailPage> {
+class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final supabase = Supabase.instance.client;
@@ -21,6 +21,10 @@ class _DetailPageState extends State<DetailPage> {
 
   bool _isInitialized = false;
   DateTime? _entryDate;
+
+  late AnimationController _dateController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void didChangeDependencies() {
@@ -40,12 +44,31 @@ class _DetailPageState extends State<DetailPage> {
       }
       _isInitialized = true;
     }
+
+    _dateController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _dateController, curve: Curves.easeOut));
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _dateController,
+      curve: Curves.easeIn,
+    );
+
+    // Start the animation
+    _dateController.forward();
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
@@ -357,36 +380,42 @@ class _DetailPageState extends State<DetailPage> {
                   ),
                   const SizedBox(height: 8),
                   // Tanggal
-                  Row(
-                    children: [
-                      Text(
-                        '${_entryDate!.day}',
-                        style: const TextStyle(
-                          fontSize: 32, // Ukuran besar untuk hari
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: Row(
                         children: [
                           Text(
-                            _monthName(_entryDate!.month),
+                            '${_entryDate!.day}',
                             style: const TextStyle(
-                              fontSize: 16, // Ukuran kecil untuk bulan
-                              color: Colors.grey,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            '${_entryDate!.year}',
-                            style: const TextStyle(
-                              fontSize: 16, // Sama dengan bulan
-                              color: Colors.grey,
-                            ),
+                          const SizedBox(width: 8),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _monthName(_entryDate!.month),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                '${_entryDate!.year}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
 
                   const SizedBox(height: 16),
