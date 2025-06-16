@@ -3,6 +3,7 @@ class DiaryEntry {
   final String userId;
   final String title;
   final String content;
+  final String emoji;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -11,6 +12,7 @@ class DiaryEntry {
     required this.userId,
     required this.title,
     required this.content,
+    required this.emoji,
     required this.createdAt,
     this.updatedAt,
   });
@@ -21,6 +23,7 @@ class DiaryEntry {
       userId: map['user_id'],
       title: map['title'] ?? '',
       content: map['content'] ?? '',
+      emoji: map['emoji'] ?? '',
       createdAt: DateTime.parse(map['created_at']),
       updatedAt:
           map['updated_at'] != null
@@ -35,6 +38,7 @@ class DiaryEntry {
       'user_id': userId,
       'title': title,
       'content': content,
+      'emoji': emoji,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

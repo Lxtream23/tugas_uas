@@ -16,17 +16,32 @@ class _DetailPageState extends State<DetailPage> {
   bool _isLoading = false;
   Map? _entry;
   Map<String, dynamic>? _lastDeletedEntry;
-  DateTime? _selectedDate;
+  String? _selectedEmoji; // null kalau belum dipilih
+  //String? _entryId;
+
+  bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)!.settings.arguments;
-    if (args != null && args is Map) {
-      _entry = args;
-      _titleController.text = _entry!['title'] ?? '';
-      _contentController.text = _entry!['content'] ?? '';
+
+    if (!_isInitialized) {
+      final args = ModalRoute.of(context)!.settings.arguments;
+      if (args != null && args is Map) {
+        _entry = args;
+        _titleController.text = _entry!['title'] ?? '';
+        _contentController.text = _entry!['content'] ?? '';
+        _selectedEmoji = _entry!['emoji'] ?? '';
+      }
+      _isInitialized = true;
     }
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
   }
 
   Future<void> _saveEntry() async {
@@ -56,37 +71,43 @@ class _DetailPageState extends State<DetailPage> {
 
     try {
       if (_entry == null) {
-        // Tambah baru
+        // INSERT BARU
         await supabase.from('diary_entries').insert({
           'user_id': user.id,
           'title': title,
           'content': content,
+          'emoji': _selectedEmoji ?? '',
           'created_at': DateTime.now().toIso8601String(),
         });
       } else {
-        // Perbarui
+        // UPDATE
         final id = _entry?['id'];
-        if (id == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ID catatan tidak ditemukan.')),
-          );
-          setState(() => _isLoading = false);
-          return;
-        }
-
+        if (id == null) throw Exception('ID catatan tidak ditemukan');
+        print({
+          'title': _titleController.text.trim(),
+          'content': _contentController.text.trim(),
+          'emoji': _selectedEmoji ?? '',
+        });
+        print('ID: ${_entry?['id']}');
         await supabase
             .from('diary_entries')
-            .update({'title': title, 'content': content})
-            .eq('id', id);
+            .update({
+              'title': _titleController.text.trim(),
+              'content': _contentController.text.trim(),
+              'emoji': _selectedEmoji ?? '',
+              //'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', _entry?['id']);
+        //print({'title': title, 'content': content, 'emoji': _selectedEmoji});
       }
 
-      if (mounted)
-        Navigator.pop(context, true); // kembali ke halaman sebelumnya
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Gagal menyimpan catatan: $e')));
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -152,6 +173,7 @@ class _DetailPageState extends State<DetailPage> {
         'user_id': userId,
         'title': _lastDeletedEntry!['title'],
         'content': _lastDeletedEntry!['content'],
+        'emoji': _lastDeletedEntry!['emoji'], // kembalikan emoji kalau ada
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -163,31 +185,81 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-  void _pickDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
+  void _showEmojiPicker() {
+    showModalBottomSheet(
       context: context,
-      initialDate: _selectedDate ?? now,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        final emojis = [
+          '😀',
+          '😎',
+          '😊',
+          '😍',
+          '🤩',
+          '😢',
+          '😭',
+          '😡',
+          '🤔',
+          '😴',
+          '😇',
+          '🥳',
+          '🤯',
+          '😱',
+          '🤤',
+          '😬',
+          '🙄',
+          '😌',
+          '💀',
+          '👻',
+          '🤗',
+          '🥰',
+          '😅',
+          '🤪',
+          '😷',
+          '😤',
+          '🤫',
+          '🤮',
+          '😈',
+          '👽',
+        ];
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            itemCount: emojis.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 5,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedEmoji = emojis[index];
+                  });
+                  Navigator.pop(context);
+                },
+                child: Center(
+                  child: Text(
+                    emojis[index],
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("Build tampilan emoji: $_selectedEmoji");
+
     return Scaffold(
       // appBar: AppBar(
       //   title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
@@ -304,12 +376,20 @@ class _DetailPageState extends State<DetailPage> {
             Positioned(
               top: 60,
               right: 16,
-              child: const CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.orangeAccent,
-                child: Text('😐', style: TextStyle(fontSize: 24)),
+              child: GestureDetector(
+                onTap: _showEmojiPicker,
+                child: Text(
+                  //_selectedEmoji ?? '🙂', // default tampilan
+                  (_selectedEmoji != null && _selectedEmoji!.isNotEmpty)
+                      ? _selectedEmoji!
+                      : '🙂',
+                  style: const TextStyle(
+                    fontSize: 40, // Besar emoji, bisa kamu sesuaikan
+                  ),
+                ),
               ),
             ),
+
             // Bottom bar icon
             Positioned(
               bottom: 0,

@@ -135,6 +135,7 @@ class _HomePageState extends State<HomePage> {
               'id': entry.id,
               'title': entry.title,
               'content': entry.content,
+              'emoji': entry.emoji,
               'created_at': entry.createdAt.toIso8601String(),
             };
 
@@ -190,6 +191,7 @@ class _HomePageState extends State<HomePage> {
         'user_id': userId,
         'title': _lastDeletedEntry!.title,
         'content': _lastDeletedEntry!.content,
+        'emoji': _lastDeletedEntry!.emoji,
         'created_at': DateTime.now().toIso8601String(),
       });
       _fetchDiaryEntries();
