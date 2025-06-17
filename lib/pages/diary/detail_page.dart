@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
@@ -371,9 +372,11 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                                     color: Colors.white,
                                   ),
                                 )
-                                : const Text(
+                                : Text(
                                   'SIMPAN',
-                                  style: TextStyle(color: Colors.white),
+                                  style: GoogleFonts.poppins(
+                                    color: Colors.white,
+                                  ),
                                 ),
                       ),
                     ],
@@ -399,14 +402,14 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                             children: [
                               Text(
                                 _monthName(_entryDate!.month),
-                                style: const TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   color: Colors.grey,
                                 ),
                               ),
                               Text(
                                 '${_entryDate!.year}',
-                                style: const TextStyle(
+                                style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   color: Colors.grey,
                                 ),
@@ -422,9 +425,10 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                   // Judul
                   TextField(
                     controller: _titleController,
-                    style: const TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
+
                       color: Colors.black,
                     ),
                     decoration: const InputDecoration(
@@ -437,6 +441,10 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                   TextField(
                     controller: _contentController,
                     maxLines: null,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                     decoration: const InputDecoration(
                       hintText: 'Tulis lebih banyak di sini...',
                       border: InputBorder.none,

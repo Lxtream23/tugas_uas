@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/diary_entry.dart';
 import '../../services/notification_service.dart';
 import '../../services/backup_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -371,15 +372,25 @@ class _HomePageState extends State<HomePage> {
                       ? TextField(
                         controller: _searchController,
                         autofocus: true,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                        decoration: InputDecoration(
                           hintText: 'Cari catatan...',
-                          hintStyle: TextStyle(color: Colors.white60),
+                          hintStyle: GoogleFonts.poppins(color: Colors.grey),
                           border: InputBorder.none,
                         ),
                         onChanged: (_) => _onSearchChanged(),
                       )
-                      : const Text('Catatan Saya'),
+                      : Text(
+                        'Catatan Saya',
+                        style: GoogleFonts.poppins(
+                          color: Colors.black,
+                          fontSize: 20,
+                          //fontWeight: FontWeight.bold,
+                        ),
+                      ),
               leading:
                   _isSearching
                       ? IconButton(
@@ -425,28 +436,98 @@ class _HomePageState extends State<HomePage> {
                       final result = await showMenu<String>(
                         context: context,
                         position: RelativeRect.fromLTRB(
-                          overlay.size.width -
-                              40, // posisi mendekati kanan atas
-                          kToolbarHeight + 50, // di bawah AppBar
+                          overlay.size.width - 40,
+                          kToolbarHeight + 50,
                           0,
                           0,
                         ),
                         items: [
-                          const PopupMenuItem(
+                          PopupMenuItem(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_latest',
-                            child: Text('⬇️ Sortir: Terbaru'),
+                            child: IntrinsicWidth(
+                              // Gunakan IntrinsicWidth untuk menghindari overflow
+                              child: SizedBox(
+                                width: 220, // Atur sesuai kebutuhan
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('⬇️ '),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Sortir: Terbaru',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                      overflow:
+                                          TextOverflow
+                                              .visible, // Pastikan teks bisa tampil penuh
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_oldest',
-                            child: Text('⬆️ Sortir: Terlama'),
+                            child: IntrinsicWidth(
+                              // Gunakan IntrinsicWidth untuk menghindari overflow
+                              child: SizedBox(
+                                width: 220, // Atur sesuai kebutuhan
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('⬆️ '),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Sortir: Terlama',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                      overflow:
+                                          TextOverflow
+                                              .visible, // Pastikan teks bisa tampil penuh
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          const PopupMenuItem(
+                          PopupMenuItem(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_title',
-                            child: Text('🔤 Sortir: Judul'),
+                            child: IntrinsicWidth(
+                              child: SizedBox(
+                                width: 220, // Atur sesuai kebutuhan
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('🔤 '),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Sortir: Judul',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                      ),
+                                      overflow:
+                                          TextOverflow
+                                              .visible, // Pastikan teks bisa tampil penuh
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ],
-                        elevation: 8,
+                        elevation: 10,
                         color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       );
 
                       if (result == 'sort_latest') {
@@ -472,9 +553,15 @@ class _HomePageState extends State<HomePage> {
                   },
                   itemBuilder:
                       (context) => [
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'backup',
-                          child: Text('📦 Cadangkan'),
+                          child: Text(
+                            'Cadangan',
+                            style: GoogleFonts.poppins(
+                              color: Colors.black,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                         PopupMenuItem(
                           onTap:
@@ -484,8 +571,14 @@ class _HomePageState extends State<HomePage> {
                               ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: const [
-                              Text('📁 Sortir dengan'),
+                            children: [
+                              Text(
+                                'Sortir dengan',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                ),
+                              ),
                               Icon(Icons.chevron_right),
                             ],
                           ),
@@ -497,7 +590,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -534,17 +626,6 @@ class _HomePageState extends State<HomePage> {
 
       body: Column(
         children: [
-          // Padding(
-          //   padding: const EdgeInsets.all(8.0),
-          //   child: TextField(
-          //     controller: _searchController,
-          //     decoration: const InputDecoration(
-          //       hintText: 'Cari berdasarkan judul...',
-          //       border: OutlineInputBorder(),
-          //       prefixIcon: Icon(Icons.search),
-          //     ),
-          //   ),
-          // ),
           //wigdet Tantangan
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
@@ -572,15 +653,21 @@ class _HomePageState extends State<HomePage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Tantangan Kebiasaan 3 Hari',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  const Text(
+                                  Text(
                                     'Tulis jurnal selama 3 hari berturut-turut',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[700],
+                                      fontSize: 14,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   TweenAnimationBuilder<double>(
@@ -601,9 +688,9 @@ class _HomePageState extends State<HomePage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     'Progress: $_challengeProgress / 3',
-                                    style: TextStyle(
+                                    style: GoogleFonts.poppins(
                                       color: getProgressColor(_progress),
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
@@ -626,14 +713,21 @@ class _HomePageState extends State<HomePage> {
                     )
                     : const SizedBox.shrink(),
           ),
-
           // List Catatan
           Expanded(
             child:
                 isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : filteredEntries.isEmpty
-                    ? const Center(child: Text('Tidak ada catatan'))
+                    ? Center(
+                      child: Text(
+                        'Tidak ada catatan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    )
                     : ListView.builder(
                       itemCount: filteredEntries.length,
                       itemBuilder: (context, index) {
@@ -664,20 +758,42 @@ class _HomePageState extends State<HomePage> {
                               context: context,
                               builder:
                                   (_) => AlertDialog(
-                                    title: const Text('Hapus Catatan'),
-                                    content: const Text(
+                                    title: Text(
+                                      'Hapus Catatan',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.black,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    content: Text(
                                       'Yakin ingin menghapus catatan ini?',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                     actions: [
                                       TextButton(
                                         onPressed:
                                             () => Navigator.pop(context, false),
-                                        child: const Text('Batal'),
+                                        child: Text(
+                                          'Batal',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.blue,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                                       ),
                                       TextButton(
                                         onPressed:
                                             () => Navigator.pop(context, true),
-                                        child: const Text('Hapus'),
+                                        child: Text(
+                                          'Hapus',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.red,
+                                            fontSize: 16,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
