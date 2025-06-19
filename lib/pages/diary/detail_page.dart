@@ -41,6 +41,13 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         _titleController.text = _entry!['title'] ?? '';
         _contentController.text = _entry!['content'] ?? '';
         _selectedEmoji = _entry!['emoji'] ?? '';
+        _selectedBackground = _entry?['background'] ?? '';
+        _textColor =
+            (_entry!['text_color'] ?? 'black') == 'white'
+                ? Colors.white
+                : Colors.black;
+
+        // Ambil tanggal entry, kalau tidak ada gunakan sekarang
         _entryDate =
             DateTime.tryParse(_entry!['created_at'] ?? '') ?? DateTime.now();
       } else {
@@ -109,6 +116,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
           'title': title,
           'content': content,
           'emoji': _selectedEmoji ?? '',
+          'background': _selectedBackground ?? '',
+          'text_color': _textColor == Colors.white ? 'white' : 'black',
           'created_at': DateTime.now().toIso8601String(),
         });
       } else {
@@ -119,6 +128,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
           'title': _titleController.text.trim(),
           'content': _contentController.text.trim(),
           'emoji': _selectedEmoji ?? '',
+          'background': _selectedBackground ?? '',
+          'text_color': _textColor == Colors.white ? 'white' : 'black',
         });
         print('ID: ${_entry?['id']}');
         await supabase
@@ -127,6 +138,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
               'title': _titleController.text.trim(),
               'content': _contentController.text.trim(),
               'emoji': _selectedEmoji ?? '',
+              'background': _selectedBackground ?? '',
+              'text_color': _textColor == Colors.white ? 'white' : 'black',
               //'updated_at': DateTime.now().toIso8601String(),
             })
             .eq('id', _entry?['id']);
@@ -206,6 +219,10 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         'title': _lastDeletedEntry!['title'],
         'content': _lastDeletedEntry!['content'],
         'emoji': _lastDeletedEntry!['emoji'], // kembalikan emoji kalau ada
+        'background':
+            _lastDeletedEntry!['background'] ??
+            '', // kembalikan background kalau ada
+        'text_color': _lastDeletedEntry!['text_color'] ?? 'black',
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -595,7 +612,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
               child: Container(
                 width: double.infinity,
                 decoration:
-                    _selectedBackground != null
+                    _selectedBackground != null &&
+                            _selectedBackground!.isNotEmpty
                         ? BoxDecoration(
                           image: DecorationImage(
                             image: AssetImage(_selectedBackground!),

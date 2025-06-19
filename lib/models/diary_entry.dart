@@ -1,46 +1,59 @@
 class DiaryEntry {
-  final String id;
-  final String userId;
-  final String title;
-  final String content;
-  final String emoji;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
+  final String id; // Tambahkan field id
+  final String userId; // Tambahkan field userId
+  final String title; // Tambahkan field title
+  final String content; // Tambahkan field content
+  final String emoji; // Tambahkan field emoji
+  final String? background; // Tambahkan field background
+  final String? textColor; // Tambahkan field textColor
+  final DateTime createdAt; // Tambahkan field createdAt
+  final DateTime? updatedAt; // Tambahkan field updatedAt
 
   DiaryEntry({
-    required this.id,
-    required this.userId,
-    required this.title,
-    required this.content,
-    required this.emoji,
-    required this.createdAt,
-    this.updatedAt,
+    required this.id, // Tambahkan id sebagai parameter
+    required this.userId, // Tambahkan userId sebagai parameter
+    required this.title, // Tambahkan title sebagai parameter
+    required this.content, // Tambahkan content sebagai parameter
+    required this.emoji, // Tambahkan emoji sebagai parameter
+    required this.background, // Tambahkan background sebagai parameter
+    this.textColor, // Tambahkan textColor sebagai parameter opsional
+    required this.createdAt, // Tambahkan createdAt sebagai parameter
+    this.updatedAt, // Tambahkan updatedAt sebagai parameter opsional
   });
 
   factory DiaryEntry.fromMap(Map<String, dynamic> map) {
     return DiaryEntry(
-      id: map['id'],
-      userId: map['user_id'],
-      title: map['title'] ?? '',
-      content: map['content'] ?? '',
-      emoji: map['emoji'] ?? '',
-      createdAt: DateTime.parse(map['created_at']),
+      id: map['id'], // Ambil id dari map
+      userId: map['user_id'], // Ambil user_id dari map
+      title: map['title'] ?? '', // Ambil title dari map
+      content: map['content'] ?? '', // Ambil content dari map
+      emoji: map['emoji'] ?? '', // Ambil emoji dari map
+      background: map['background'] ?? '', // Ambil background dari map
+      textColor: map['text_color'], // Ambil text_color dari map
+      createdAt: DateTime.parse(map['created_at']), // Ambil created_at dari map
       updatedAt:
           map['updated_at'] != null
               ? DateTime.tryParse(map['updated_at'])
               : null,
-    );
+    ); // Buat instance DiaryEntry dari map
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
-      'user_id': userId,
-      'title': title,
-      'content': content,
-      'emoji': emoji,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
+      'id': id, // Sertakan id dalam map
+      'user_id': userId, // Sertakan user_id dalam map
+      'title': title, // Sertakan title dalam map
+      'content': content, // Sertakan content dalam map
+      'emoji': emoji, // Sertakan emoji dalam map
+      'background':
+          background ??
+          '', // Sertakan background dalam map, jika null gunakan string kosong
+      'text_color': textColor, // Sertakan text_color dalam map
+      'created_at':
+          createdAt.toIso8601String(), // Sertakan created_at dalam map
+      'updated_at':
+          updatedAt
+              ?.toIso8601String(), // Sertakan updated_at dalam map, jika null gunakan null
     };
   }
 }
