@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:palette_generator/palette_generator.dart';
 
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
@@ -20,6 +21,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   String? _selectedEmoji; // null kalau belum dipilih
   String? _selectedBackground; // null = default background
   //String? _entryId;
+  Color _textColor = Colors.black; // Default text color
 
   bool _isInitialized = false;
   DateTime? _entryDate;
@@ -325,7 +327,6 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       'assets/bg_catatan/bg11.jpeg',
       'assets/bg_catatan/bg12.jpeg',
       'assets/bg_catatan/bg13.jpeg',
-      // tambah sesuai gambar kamu
     ];
 
     showModalBottomSheet(
@@ -346,11 +347,34 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             ),
             itemBuilder: (context, index) {
               return GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  final imagePath = backgrounds[index];
+
+                  // Tampilkan loading dulu
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder:
+                        (context) =>
+                            const Center(child: CircularProgressIndicator()),
+                  );
+
+                  final imageProvider = AssetImage(imagePath);
+                  final palette = await PaletteGenerator.fromImageProvider(
+                    imageProvider,
+                  );
+
+                  final dominantColor =
+                      palette.dominantColor?.color ?? Colors.white;
+                  final luminance = dominantColor.computeLuminance();
+
                   setState(() {
-                    _selectedBackground = backgrounds[index];
+                    _selectedBackground = imagePath;
+                    _textColor = luminance > 0.5 ? Colors.black : Colors.white;
                   });
-                  Navigator.pop(context);
+
+                  Navigator.pop(context); // tutup loading
+                  Navigator.pop(context); // tutup bottom sheet
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
@@ -592,8 +616,9 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                             children: [
                               Text(
                                 '${_entryDate!.day}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
+                                  color: _textColor,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -604,13 +629,13 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                                   Text(
                                     _monthName(_entryDate!.month),
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey,
+                                      color: _textColor,
                                     ),
                                   ),
                                   Text(
                                     '${_entryDate!.year}',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey,
+                                      color: _textColor,
                                     ),
                                   ),
                                 ],
@@ -639,6 +664,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                         ),
                         style: GoogleFonts.poppins(
                           fontSize: 20,
+                          color: _textColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -652,7 +678,10 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
                         ),
-                        style: GoogleFonts.poppins(fontSize: 16),
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: _textColor,
+                        ),
                       ),
                     ],
                   ),

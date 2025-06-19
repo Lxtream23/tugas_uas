@@ -58,6 +58,7 @@ dependencies:
   android_alarm_manager_plus: ^3.0.3
   google_fonts: ^6.2.0 #Font modern dari Google
   flutter_svg: ^2.0.7 #Logo Google
+  palette_generator: ^0.3.3 #Untuk mengambil warna dari gambar
 
 
 dev_dependencies:
