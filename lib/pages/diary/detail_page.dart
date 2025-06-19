@@ -18,6 +18,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   Map? _entry;
   Map<String, dynamic>? _lastDeletedEntry;
   String? _selectedEmoji; // null kalau belum dipilih
+  String? _selectedBackground; // null = default background
   //String? _entryId;
 
   bool _isInitialized = false;
@@ -309,12 +310,409 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     return bulan[month];
   }
 
+  void _showBackgroundPicker() {
+    final backgrounds = [
+      'assets/bg_catatan/bg1.jpeg',
+      'assets/bg_catatan/bg2.jpeg',
+      'assets/bg_catatan/bg3.jpeg',
+      'assets/bg_catatan/bg4.jpeg',
+      'assets/bg_catatan/bg5.jpeg',
+      'assets/bg_catatan/bg6.jpeg',
+      'assets/bg_catatan/bg7.jpeg',
+      'assets/bg_catatan/bg8.jpeg',
+      'assets/bg_catatan/bg9.jpeg',
+      'assets/bg_catatan/bg10.jpeg',
+      'assets/bg_catatan/bg11.jpeg',
+      'assets/bg_catatan/bg12.jpeg',
+      'assets/bg_catatan/bg13.jpeg',
+      // tambah sesuai gambar kamu
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            itemCount: backgrounds.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+            ),
+            itemBuilder: (context, index) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedBackground = backgrounds[index];
+                  });
+                  Navigator.pop(context);
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(backgrounds[index], fit: BoxFit.cover),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage() async {
+    // Untuk demo: masukkan tag [image] di posisi kursor
+    // Untuk produksi, gunakan image_picker dan upload ke Supabase Storage
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    final imageTag = '\n[image]\n';
+    _contentController.text = text.replaceRange(
+      selection.start,
+      selection.end,
+      imageTag,
+    );
+    _contentController.selection = TextSelection.collapsed(
+      offset: selection.start + imageTag.length,
+    );
+    // TODO: Implementasi image picker & upload jika diperlukan
+  }
+
+  void _toggleFavorite() {
+    // Toggle status favorit pada _entry (misal: tambahkan field is_favorite)
+    setState(() {
+      if (_entry != null) {
+        _entry!['is_favorite'] = !(_entry!['is_favorite'] ?? false);
+      } else {
+        // Untuk entry baru, bisa tampilkan pesan atau simpan status lokal
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Favorit hanya untuk catatan yang sudah disimpan'),
+          ),
+        );
+      }
+    });
+  }
+
+  void _insertTextField() {
+    // Menyisipkan placeholder [text_field] di posisi kursor
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    const field = '\n[text_field]\n';
+    _contentController.text = text.replaceRange(
+      selection.start,
+      selection.end,
+      field,
+    );
+    _contentController.selection = TextSelection.collapsed(
+      offset: selection.start + field.length,
+    );
+  }
+
+  void _insertList() {
+    // Menyisipkan bullet list di posisi kursor
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    const list = '\n• Item 1\n• Item 2\n';
+    _contentController.text = text.replaceRange(
+      selection.start,
+      selection.end,
+      list,
+    );
+    _contentController.selection = TextSelection.collapsed(
+      offset: selection.start + list.length,
+    );
+  }
+
+  void _assignLabel() {
+    // Menyisipkan label/tag di posisi kursor
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    const label = '\n#label\n';
+    _contentController.text = text.replaceRange(
+      selection.start,
+      selection.end,
+      label,
+    );
+    _contentController.selection = TextSelection.collapsed(
+      offset: selection.start + label.length,
+    );
+  }
+
+  void _savePhoneNumber() {
+    // Menyisipkan placeholder nomor telepon di posisi kursor
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    const phone = '\n[phone: 08xxxxxxxxxx]\n';
+    _contentController.text = text.replaceRange(
+      selection.start,
+      selection.end,
+      phone,
+    );
+    _contentController.selection = TextSelection.collapsed(
+      offset: selection.start + phone.length,
+    );
+  }
+
+  // void _recordAudio() {
+  //   // Menyisipkan placeholder audio di posisi kursor
+  //   final text = _contentController.text;
+  //   final selection = _contentController.selection;
+  //   const audio = '\n[audio]\n';
+  //   _contentController.text = text.replaceRange(
+  //     selection.start,
+  //     selection.end,
+  //     audio,
+  //   );
+  //   _contentController.selection = TextSelection.collapsed(
+  //     offset: selection.start + audio.length,
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     print("Build tampilan emoji: $_selectedEmoji");
-
     return Scaffold(
-      // appBar: AppBar(
+      //resizeToAvoidBottomInset: false,  // Agar tidak mengganggu tampilan saat keyboard muncul
+      body: SafeArea(
+        child: Column(
+          children: [
+            // TOP BAR (putih)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              decoration: BoxDecoration(
+                color: Colors.white, // Top bar solid white
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Tombol kembali modern
+                  IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.black87,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    tooltip: 'Kembali',
+                  ),
+
+                  // Tombol aksi (hapus + simpan)
+                  Row(
+                    children: [
+                      if (_entry != null)
+                        OutlinedButton.icon(
+                          onPressed: _deleteEntry,
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          label: const Text(
+                            'HAPUS',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.red),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                          ),
+                        ),
+                      if (_entry != null) const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: _isLoading ? null : _saveEntry,
+                        icon: const Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.white,
+                        ),
+                        label: const Text(
+                          'SIMPAN',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6C63FF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          elevation: 0, // flat style
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // AREA DENGAN BACKGROUND IMAGE
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration:
+                    _selectedBackground != null
+                        ? BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(_selectedBackground!),
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                        : const BoxDecoration(color: Color(0xFFDCEEFF)),
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tanggal + emoji
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                '${_entryDate!.day}',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _monthName(_entryDate!.month),
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${_entryDate!.year}',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          GestureDetector(
+                            onTap: _showEmojiPicker,
+                            child: Text(
+                              (_selectedEmoji?.isNotEmpty ?? false)
+                                  ? _selectedEmoji!
+                                  : '🙂',
+                              style: const TextStyle(fontSize: 40),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(
+                          hintText: 'Judul',
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextField(
+                        controller: _contentController,
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          hintText: 'Tulis lebih banyak di sini...',
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        style: GoogleFonts.poppins(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.wallpaper, size: 24),
+              onPressed: _showBackgroundPicker,
+            ),
+            IconButton(
+              icon: const Icon(Icons.image, size: 24),
+              onPressed: _pickImage,
+            ),
+            IconButton(
+              icon: const Icon(Icons.star_border, size: 24),
+              onPressed: _toggleFavorite,
+            ),
+            IconButton(
+              icon: const Icon(Icons.emoji_emotions, size: 24),
+              onPressed: _showEmojiPicker,
+            ),
+            IconButton(
+              icon: const Icon(Icons.text_fields, size: 24),
+              onPressed: _insertTextField,
+            ),
+            IconButton(
+              icon: const Icon(Icons.format_list_bulleted, size: 24),
+              onPressed: _insertList,
+            ),
+            IconButton(
+              icon: const Icon(Icons.label_outline, size: 24),
+              onPressed: _assignLabel,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+// appBar: AppBar(
       //   title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
 
       //   // actions: [
@@ -326,179 +724,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       //   //     ),
       //   // ],
       // ),
-      backgroundColor: const Color(0xFFDCEEFF), // biru muda
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Bar atas
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      // Text(
-                      //   _entry == null ? 'Tambah Catatan' : 'Edit Catatan',
-                      //   style: const TextStyle(
-                      //     fontSize: 20,
-                      //     fontWeight: FontWeight.bold,
-                      //   ),
-                      // ),
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _saveEntry,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                        ),
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                                : Text(
-                                  'SIMPAN',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                  ),
-                                ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  // Tanggal
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Row(
-                        children: [
-                          Text(
-                            '${_entryDate!.day}',
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _monthName(_entryDate!.month),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Text(
-                                '${_entryDate!.year}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  // Judul
-                  TextField(
-                    controller: _titleController,
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-
-                      color: Colors.black,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'Judul',
-                      border: InputBorder.none,
-                    ),
-                  ),
-                  // Isi catatan
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _contentController,
-                    maxLines: null,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                    decoration: const InputDecoration(
-                      hintText: 'Tulis lebih banyak di sini...',
-                      border: InputBorder.none,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Emoji mood
-            Positioned(
-              top: 60,
-              right: 16,
-              child: GestureDetector(
-                onTap: _showEmojiPicker,
-                child: Text(
-                  //_selectedEmoji ?? '🙂', // default tampilan
-                  (_selectedEmoji != null && _selectedEmoji!.isNotEmpty)
-                      ? _selectedEmoji!
-                      : '🙂',
-                  style: const TextStyle(
-                    fontSize: 40, // Besar emoji, bisa kamu sesuaikan
-                  ),
-                ),
-              ),
-            ),
-
-            // Bottom bar icon
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                color: Colors.white,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: const [
-                    Icon(Icons.line_weight),
-                    Icon(Icons.image),
-                    Icon(Icons.star_border),
-                    Icon(Icons.emoji_emotions),
-                    Icon(Icons.text_fields),
-                    Icon(Icons.format_list_bulleted),
-                    Icon(Icons.label_outline),
-                    Icon(Icons.call),
-                    Icon(Icons.mic),
-                  ],
-                ),
-              ),
-            ),
-            // Tombol simpan
+      // Tombol simpan
             // SizedBox(
             //   width: double.infinity,
             //   child: ElevatedButton(
@@ -517,9 +743,3 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             //     ),
             //   ),
             // ),
-          ],
-        ),
-      ),
-    );
-  }
-}

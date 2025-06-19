@@ -77,6 +77,7 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   assets:
+    # assets avatars
     - assets/avatars/avatar1.png
     - assets/avatars/avatar2.png
     - assets/avatars/avatar3.png
@@ -88,8 +89,24 @@ flutter:
     - assets/avatars/avatar9.png
     - assets/avatars/avatar10.png
     - assets/images/header_mountain.jpg
+    # assets logo google
     - assets/icons/google_icon.svg
+    # asset logo
     - assets/logo/notexa_logo.svg
+    # assets background catatan
+    - assets/bg_catatan/bg1.jpeg
+    - assets/bg_catatan/bg2.jpeg 
+    - assets/bg_catatan/bg3.jpeg
+    - assets/bg_catatan/bg4.jpeg
+    - assets/bg_catatan/bg5.jpeg
+    - assets/bg_catatan/bg6.jpeg
+    - assets/bg_catatan/bg7.jpeg
+    - assets/bg_catatan/bg8.jpeg
+    - assets/bg_catatan/bg9.jpeg
+    - assets/bg_catatan/bg10.jpeg
+    - assets/bg_catatan/bg11.jpeg
+    - assets/bg_catatan/bg12.jpeg
+    - assets/bg_catatan/bg13.jpeg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
