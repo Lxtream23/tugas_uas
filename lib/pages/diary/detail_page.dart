@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
@@ -14,6 +17,8 @@ class DetailPage extends StatefulWidget {
 class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
+  final _contentBelowController = TextEditingController();
+
   final supabase = Supabase.instance.client;
   bool _isLoading = false;
   Map? _entry;
@@ -22,6 +27,10 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   String? _selectedBackground; // null = default background
   //String? _entryId;
   Color _textColor = Colors.black; // Default text color
+
+  List<File> _pickedImages = []; // List to store picked images
+  List<Uint8List> _pickedImagesBytes = []; // For web support
+  List<String> _uploadedImageUrls = []; // URLs of uploaded images
 
   bool _isInitialized = false;
   DateTime? _entryDate;
@@ -46,6 +55,13 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             (_entry!['text_color'] ?? 'black') == 'white'
                 ? Colors.white
                 : Colors.black;
+        _contentBelowController.text =
+            _entry?['content_below'] ?? ''; // Ambil content_below kalau ada
+        _uploadedImageUrls =
+            (_entry!['image_urls'] as List<dynamic>?)
+                ?.map((url) => url.toString())
+                .toList() ??
+            [];
 
         // Ambil tanggal entry, kalau tidak ada gunakan sekarang
         _entryDate =
@@ -79,6 +95,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _contentBelowController.dispose();
     _dateController.dispose();
     super.dispose();
   }
@@ -109,41 +126,29 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
 
     try {
+      final data = {
+        'user_id': user.id,
+        'title': title,
+        'content': content,
+        'emoji': _selectedEmoji ?? '',
+        'background': _selectedBackground ?? '',
+        'text_color': _textColor == Colors.white ? 'white' : 'black',
+        'content_below': _contentBelowController.text.trim(),
+        'image_urls': _uploadedImageUrls.isNotEmpty ? _uploadedImageUrls : null,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
       if (_entry == null) {
-        // INSERT BARU
-        await supabase.from('diary_entries').insert({
-          'user_id': user.id,
-          'title': title,
-          'content': content,
-          'emoji': _selectedEmoji ?? '',
-          'background': _selectedBackground ?? '',
-          'text_color': _textColor == Colors.white ? 'white' : 'black',
-          'created_at': DateTime.now().toIso8601String(),
-        });
+        await supabase.from('diary_entries').insert(data);
       } else {
-        // UPDATE
         final id = _entry?['id'];
         if (id == null) throw Exception('ID catatan tidak ditemukan');
-        print({
-          'title': _titleController.text.trim(),
-          'content': _contentController.text.trim(),
-          'emoji': _selectedEmoji ?? '',
-          'background': _selectedBackground ?? '',
-          'text_color': _textColor == Colors.white ? 'white' : 'black',
-        });
-        print('ID: ${_entry?['id']}');
-        await supabase
-            .from('diary_entries')
-            .update({
-              'title': _titleController.text.trim(),
-              'content': _contentController.text.trim(),
-              'emoji': _selectedEmoji ?? '',
-              'background': _selectedBackground ?? '',
-              'text_color': _textColor == Colors.white ? 'white' : 'black',
-              //'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', _entry?['id']);
-        //print({'title': title, 'content': content, 'emoji': _selectedEmoji});
+
+        final updateData = Map.of(data);
+        updateData.remove('user_id');
+        updateData.remove('created_at');
+
+        await supabase.from('diary_entries').update(updateData).eq('id', id);
       }
 
       if (mounted) Navigator.pop(context, true);
@@ -223,6 +228,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             _lastDeletedEntry!['background'] ??
             '', // kembalikan background kalau ada
         'text_color': _lastDeletedEntry!['text_color'] ?? 'black',
+        'content_below': _lastDeletedEntry!['content_below'] ?? '',
+        'image_urls': _lastDeletedEntry!['image_urls'] ?? [],
         'created_at': DateTime.now().toIso8601String(),
       });
 
@@ -406,20 +413,65 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   }
 
   Future<void> _pickImage() async {
-    // Untuk demo: masukkan tag [image] di posisi kursor
-    // Untuk produksi, gunakan image_picker dan upload ke Supabase Storage
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    final imageTag = '\n[image]\n';
-    _contentController.text = text.replaceRange(
-      selection.start,
-      selection.end,
-      imageTag,
-    );
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + imageTag.length,
-    );
-    // TODO: Implementasi image picker & upload jika diperlukan
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User tidak ditemukan, silakan login ulang'),
+          ),
+        );
+        return;
+      }
+      print(supabase.auth.currentUser);
+
+      final safeName = pickedFile.name.replaceAll(
+        RegExp(r'[^a-zA-Z0-9_\-\.]'),
+        '',
+      );
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$safeName';
+      final storage = Supabase.instance.client.storage.from('diaryimages');
+      final fileBytes = await pickedFile.readAsBytes();
+
+      try {
+        final response = await storage.uploadBinary(
+          fileName,
+          fileBytes,
+          fileOptions: FileOptions(
+            cacheControl: '3600',
+            upsert: false,
+            metadata: {'user_id': userId},
+          ),
+        );
+
+        if (response.isEmpty) {
+          throw Exception('Upload gagal');
+        }
+
+        final publicUrl = storage.getPublicUrl(fileName);
+        print('✅ Public URL: $publicUrl');
+
+        setState(() {
+          if (kIsWeb) {
+            _pickedImagesBytes.add(fileBytes);
+          } else {
+            _pickedImages.add(File(pickedFile.path));
+          }
+          _uploadedImageUrls.add(publicUrl);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gambar berhasil diupload')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal upload gambar: $e')));
+      }
+    }
   }
 
   void _toggleFavorite() {
@@ -647,13 +699,17 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                                   Text(
                                     _monthName(_entryDate!.month),
                                     style: GoogleFonts.poppins(
-                                      color: _textColor,
+                                      color:
+                                          _textColor?.withOpacity(0.8) ??
+                                          Colors.grey,
                                     ),
                                   ),
                                   Text(
                                     '${_entryDate!.year}',
                                     style: GoogleFonts.poppins(
-                                      color: _textColor,
+                                      color:
+                                          _textColor?.withOpacity(0.8) ??
+                                          Colors.grey,
                                     ),
                                   ),
                                 ],
@@ -674,8 +730,14 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _titleController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Judul',
+                          hintStyle: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color:
+                                _textColor?.withOpacity(0.6) ??
+                                Colors.black, // hint lebih transparan
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.zero,
@@ -687,19 +749,152 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      TextField(
-                        controller: _contentController,
-                        maxLines: null,
-                        decoration: const InputDecoration(
-                          hintText: 'Tulis lebih banyak di sini...',
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: _textColor,
-                        ),
+                      // TextField(
+                      //   controller: _contentController,
+                      //   maxLines: null,
+                      //   decoration: const InputDecoration(
+                      //     hintText: 'Tulis lebih banyak di sini...',
+                      //     border: InputBorder.none,
+                      //     isDense: true,
+                      //     contentPadding: EdgeInsets.zero,
+                      //   ),
+                      //   style: GoogleFonts.poppins(
+                      //     fontSize: 16,
+                      //     color: _textColor,
+                      //   ),
+                      // ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Render TextField untuk isi atas (selalu ada)
+                          TextField(
+                            controller: _contentController,
+                            maxLines: null,
+                            decoration: InputDecoration(
+                              hintText: 'Tulis lebih banyak di sini...',
+                              hintStyle: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color:
+                                    _textColor?.withOpacity(0.6) ?? Colors.grey,
+                              ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: _textColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Render gambar + tombol hapus
+                          // Render gambar dari _uploadedImageUrls (URL dari Supabase Storage)
+                          ..._uploadedImageUrls.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final url = entry.value;
+                            print(_uploadedImageUrls);
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      url,
+                                      fit: BoxFit.contain,
+                                      width: double.infinity,
+                                      loadingBuilder: (
+                                        context,
+                                        child,
+                                        progress,
+                                      ) {
+                                        if (progress == null) return child;
+                                        return Center(
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                progress.expectedTotalBytes !=
+                                                        null
+                                                    ? progress
+                                                            .cumulativeBytesLoaded /
+                                                        (progress
+                                                                .expectedTotalBytes ??
+                                                            1)
+                                                    : null,
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Center(
+                                                child: Text(
+                                                  'Gagal memuat gambar',
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 10,
+                                  right: 6,
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _uploadedImageUrls.removeAt(index);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.6),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          const SizedBox(height: 8),
+
+                          // Render content_below kalau ada gambar
+                          if ((_uploadedImageUrls.isNotEmpty ||
+                                  _pickedImages.isNotEmpty ||
+                                  _pickedImagesBytes.isNotEmpty) ||
+                              _contentBelowController.text.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 5),
+                              child: TextField(
+                                controller: _contentBelowController,
+                                maxLines: null,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  color: _textColor,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Tulis di bawah gambar...',
+                                  hintStyle: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color:
+                                        _textColor?.withOpacity(0.6) ??
+                                        Colors.grey,
+                                  ),
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),

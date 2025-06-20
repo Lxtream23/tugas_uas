@@ -6,6 +6,8 @@ class DiaryEntry {
   final String emoji; // Tambahkan field emoji
   final String? background; // Tambahkan field background
   final String? textColor; // Tambahkan field textColor
+  final String? contentBelow; // Tambahkan field contentBelow
+  final List<String>? imageUrls; // Tambahkan field imageUrl
   final DateTime createdAt; // Tambahkan field createdAt
   final DateTime? updatedAt; // Tambahkan field updatedAt
 
@@ -17,6 +19,8 @@ class DiaryEntry {
     required this.emoji, // Tambahkan emoji sebagai parameter
     required this.background, // Tambahkan background sebagai parameter
     this.textColor, // Tambahkan textColor sebagai parameter opsional
+    this.contentBelow, // Tambahkan contentBelow sebagai parameter opsional
+    this.imageUrls, // Tambahkan imageUrl sebagai parameter opsional
     required this.createdAt, // Tambahkan createdAt sebagai parameter
     this.updatedAt, // Tambahkan updatedAt sebagai parameter opsional
   });
@@ -30,6 +34,18 @@ class DiaryEntry {
       emoji: map['emoji'] ?? '', // Ambil emoji dari map
       background: map['background'] ?? '', // Ambil background dari map
       textColor: map['text_color'], // Ambil text_color dari map
+      contentBelow: map['content_below'], // Ambil content_below dari map
+      imageUrls:
+          (map['image_urls'] is List)
+              ? (map['image_urls'] as List).map((e) => e.toString()).toList()
+              : (map['image_urls'] != null && map['image_urls'] is String)
+              ? (map['image_urls'] as String)
+                  .replaceAll(RegExp(r'^{|}$'), '') // hapus { dan }
+                  .split(',')
+                  .map((e) => e.trim())
+                  .toList()
+              : [],
+      // Ambil image_url dari map
       createdAt: DateTime.parse(map['created_at']), // Ambil created_at dari map
       updatedAt:
           map['updated_at'] != null
@@ -49,6 +65,9 @@ class DiaryEntry {
           background ??
           '', // Sertakan background dalam map, jika null gunakan string kosong
       'text_color': textColor, // Sertakan text_color dalam map
+      'content_below':
+          contentBelow, // Sertakan content_below dalam map, jika null gunakan null
+      'image_urls': imageUrls, // Sertakan image_url dalam map
       'created_at':
           createdAt.toIso8601String(), // Sertakan created_at dalam map
       'updated_at':

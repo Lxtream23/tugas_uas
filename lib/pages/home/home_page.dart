@@ -139,6 +139,8 @@ class _HomePageState extends State<HomePage> {
               'emoji': entry.emoji,
               'background': entry.background,
               'text_color': entry.textColor ?? 'black',
+              'content_below': entry.contentBelow ?? '',
+              'image_urls': entry.imageUrls ?? '',
               'created_at': entry.createdAt.toIso8601String(),
             };
 
@@ -197,6 +199,8 @@ class _HomePageState extends State<HomePage> {
         'emoji': _lastDeletedEntry!.emoji,
         'background': _lastDeletedEntry!.background,
         'text_color': _lastDeletedEntry!.textColor ?? 'black',
+        'content_below': _lastDeletedEntry!.contentBelow ?? '',
+        'image_urls': _lastDeletedEntry!.imageUrls ?? '',
         'created_at': DateTime.now().toIso8601String(),
       });
       _fetchDiaryEntries();
