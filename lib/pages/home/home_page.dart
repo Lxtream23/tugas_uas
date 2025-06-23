@@ -1,14 +1,16 @@
+// Import library Flutter dan package eksternal yang dibutuhkan
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../models/diary_entry.dart';
-import '../../services/notification_service.dart';
-import '../../services/backup_service.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../../widgets/custom_snackbar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Untuk koneksi ke Supabase (backend)
+import 'package:shared_preferences/shared_preferences.dart'; // Untuk penyimpanan lokal sederhana
+import '../../models/diary_entry.dart'; // Model data catatan harian
+import '../../services/notification_service.dart'; // Layanan notifikasi lokal
+import '../../services/backup_service.dart'; // Layanan backup data
+import 'package:google_fonts/google_fonts.dart'; // Untuk menggunakan font Google
+import '../../widgets/custom_snackbar.dart'; // Widget custom snackbar
 
+// Widget utama halaman Home
 class HomePage extends StatefulWidget {
-  final void Function(ThemeMode)? onThemeChanged;
+  final void Function(ThemeMode)? onThemeChanged; // Callback untuk mengubah tema
 
   const HomePage({Key? key, this.onThemeChanged}) : super(key: key);
 
@@ -16,19 +18,22 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
+// State dari HomePage
 class _HomePageState extends State<HomePage> {
-  final supabase = Supabase.instance.client;
-  bool _isSearching = false;
-  List<DiaryEntry> diaryEntries = [];
-  List<DiaryEntry> filteredEntries = [];
-  final _searchController = TextEditingController();
-  bool isLoading = true;
-  DiaryEntry? _lastDeletedEntry;
-  bool _showChallenge = true;
-  int _challengeProgress = 1; // misal, 1 dari 3 hari
+  final supabase = Supabase.instance.client; // Inisialisasi client Supabase
+  bool _isSearching = false; // Status apakah sedang mencari
+  List<DiaryEntry> diaryEntries = []; // List semua catatan
+  List<DiaryEntry> filteredEntries = []; // List catatan yang sudah difilter (misal hasil pencarian)
+  final _searchController = TextEditingController(); // Controller untuk input pencarian
+  bool isLoading = true; // Status loading data
+  DiaryEntry? _lastDeletedEntry; // Menyimpan catatan terakhir yang dihapus (untuk undo)
+  bool _showChallenge = true; // Status apakah tantangan ditampilkan
+  int _challengeProgress = 1; // Progress tantangan menulis jurnal
 
+  // Getter untuk progress tantangan (dalam bentuk persentase)
   double get _progress => _challengeProgress / 3;
 
+  // Fungsi untuk menentukan warna progress bar tantangan
   Color getProgressColor(double value) {
     if (value >= 1.0) return Colors.green;
     if (value >= 0.5) return Colors.orange;
@@ -36,31 +41,33 @@ class _HomePageState extends State<HomePage> {
     return Colors.grey;
   }
 
-  String _sortBy = 'terbaru'; // nilai default
+  String _sortBy = 'terbaru'; // Opsi sortir default
 
   @override
   void initState() {
     super.initState();
-    _fetchDiaryEntries();
-    _searchController.addListener(_onSearchChanged);
-    _loadChallengeProgress();
-    _loadChallengePrefs();
-    _loadSortPreference();
-    _cekBackupOtomatis();
-    _cekBackupOtomatisSekaliSehari();
+    _fetchDiaryEntries(); // Ambil data catatan dari backend
+    _searchController.addListener(_onSearchChanged); // Listener untuk pencarian
+    _loadChallengeProgress(); // Ambil progress tantangan dari local storage
+    _loadChallengePrefs(); // Ambil preferensi tantangan dari local storage
+    _loadSortPreference(); // Ambil preferensi sortir dari local storage
+    _cekBackupOtomatis(); // Cek dan jalankan backup otomatis jika aktif
+    _cekBackupOtomatisSekaliSehari(); // Jalankan backup otomatis sekali sehari jika aktif
   }
 
+  // Fungsi untuk cek dan jalankan backup otomatis (langsung)
   Future<void> _cekBackupOtomatis() async {
-    await Future.delayed(const Duration(seconds: 2)); // ✅ Delay 2 detik
+    await Future.delayed(const Duration(seconds: 2)); // Delay 2 detik
     if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final aktif = prefs.getBool('backup_otomatis') ?? false;
 
     if (aktif) {
-      await BackupService.generateBackupJson(context);
+      await BackupService.generateBackupJson(context); // Jalankan backup
     }
   }
 
+  // Fungsi untuk backup otomatis sekali sehari
   Future<void> _cekBackupOtomatisSekaliSehari() async {
     final prefs = await SharedPreferences.getInstance();
     final aktif = prefs.getBool('backup_otomatis') ?? false;
@@ -81,7 +88,7 @@ class _HomePageState extends State<HomePage> {
       // Simpan tanggal hari ini
       prefs.setString('last_backup_date', today);
 
-      // (Opsional) Tampilkan notifikasi sukses
+      // Tampilkan notifikasi sukses
       showCustomSnackBar(
         context,
         'Backup otomatis berhasil',
@@ -92,6 +99,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Fungsi untuk mengambil data catatan dari Supabase
   Future<void> _fetchDiaryEntries() async {
     if (!mounted) return;
     setState(() => isLoading = true);
@@ -107,6 +115,7 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    // Query data catatan berdasarkan user_id
     final response = await supabase
         .from('diary_entries')
         .select()
@@ -123,6 +132,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi yang dijalankan saat input pencarian berubah
   void _onSearchChanged() {
     final query = _searchController.text.toLowerCase();
     setState(() {
@@ -133,6 +143,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Navigasi ke halaman detail catatan (untuk tambah/edit)
   void _goToDetail(DiaryEntry? entry) {
     final args =
         entry == null
@@ -157,6 +168,7 @@ class _HomePageState extends State<HomePage> {
         await Future.delayed(const Duration(milliseconds: 300));
         _fetchDiaryEntries();
 
+        // Update progress tantangan jika berhasil menulis jurnal
         if (_challengeProgress < 3) {
           setState(() => _challengeProgress += 1);
           _saveChallengePrefs();
@@ -169,6 +181,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi untuk menghapus catatan
   Future<void> _deleteDiaryEntry(String id) async {
     try {
       final deleted = diaryEntries.firstWhere((e) => e.id == id);
@@ -177,6 +190,7 @@ class _HomePageState extends State<HomePage> {
       await supabase.from('diary_entries').delete().eq('id', id);
       if (!mounted) return;
       _fetchDiaryEntries();
+      // Tampilkan snackbar dengan opsi undo
       showCustomSnackBar(
         context,
         'Catatan dihapus',
@@ -188,6 +202,7 @@ class _HomePageState extends State<HomePage> {
       );
     } catch (e) {
       if (!mounted) return;
+      // Tampilkan pesan error jika gagal menghapus
       showCustomSnackBar(
         context,
         'Gagal menghapus catatan: $e',
@@ -198,6 +213,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Fungsi untuk membatalkan penghapusan catatan (undo)
   Future<void> _undoDelete() async {
     final userId = supabase.auth.currentUser?.id;
     if (_lastDeletedEntry == null || userId == null) return;
@@ -218,6 +234,7 @@ class _HomePageState extends State<HomePage> {
       _fetchDiaryEntries();
     } catch (e) {
       if (!mounted) return;
+      // Tampilkan pesan error jika gagal mengembalikan catatan
       showCustomSnackBar(
         context,
         'Gagal mengembalikan catatan: $e',
@@ -228,6 +245,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // Fungsi untuk mengambil progress tantangan dari local storage
   void _loadChallengeProgress() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -235,6 +253,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi untuk mengambil preferensi tantangan dari local storage
   void _loadChallengePrefs() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -243,12 +262,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi untuk menyimpan preferensi tantangan ke local storage
   Future<void> _saveChallengePrefs() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('show_challenge', _showChallenge);
     await prefs.setInt('challenge_progress', _challengeProgress);
   }
 
+  // Fungsi untuk menampilkan dialog sortir
   void _showSortDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
@@ -292,6 +313,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 12),
+                        // Opsi sortir terbaru
                         ListTile(
                           leading: const Icon(Icons.arrow_downward),
                           title: const Text('Terbaru'),
@@ -304,6 +326,7 @@ class _HomePageState extends State<HomePage> {
                             _applySort('terbaru');
                           },
                         ),
+                        // Opsi sortir terlama
                         ListTile(
                           leading: const Icon(Icons.arrow_upward),
                           title: const Text('Terlama'),
@@ -316,6 +339,7 @@ class _HomePageState extends State<HomePage> {
                             _applySort('terlama');
                           },
                         ),
+                        // Opsi sortir judul
                         ListTile(
                           leading: const Icon(Icons.sort_by_alpha),
                           title: const Text('Judul'),
@@ -340,6 +364,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // Fungsi untuk mengurutkan catatan sesuai pilihan sortir
   void _applySort(String sortBy) {
     setState(() {
       _sortBy = sortBy;
@@ -349,7 +374,7 @@ class _HomePageState extends State<HomePage> {
         if (a.isFavorite && !b.isFavorite) return -1;
         if (!a.isFavorite && b.isFavorite) return 1;
 
-        // Kalau dua-duanya sama status favoritnya, urutkan sesuai sortBy
+        // Urutkan sesuai pilihan sortir
         switch (sortBy) {
           case 'terbaru':
             return b.createdAt.compareTo(a.createdAt);
@@ -364,12 +389,14 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Fungsi untuk mengambil preferensi sortir dari local storage
   Future<void> _loadSortPreference() async {
     final prefs = await SharedPreferences.getInstance();
     final sortBy = prefs.getString('sort_by') ?? 'terbaru';
     _applySort(sortBy);
   }
 
+  // List nama bulan untuk tampilan tanggal catatan
   static const List<String> months = [
     'Jan',
     'Feb',
@@ -387,18 +414,19 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _searchController.dispose(); // Dispose controller pencarian
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      //appBar: AppBar(title: const Text('Catatan Saya')),
+      // AppBar custom dengan gambar header dan fitur pencarian
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(180),
         child: Stack(
           children: [
+            // Gambar header di atas
             Container(
               height: 180,
               decoration: const BoxDecoration(
@@ -408,6 +436,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            // AppBar transparan di atas gambar
             AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
@@ -432,7 +461,6 @@ class _HomePageState extends State<HomePage> {
                         style: GoogleFonts.poppins(
                           color: Colors.black,
                           fontSize: 20,
-                          //fontWeight: FontWeight.bold,
                         ),
                       ),
               leading:
@@ -456,6 +484,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                       ),
               actions: [
+                // Tombol search
                 if (!_isSearching)
                   IconButton(
                     icon: const Icon(Icons.search),
@@ -465,14 +494,14 @@ class _HomePageState extends State<HomePage> {
                       });
                     },
                   ),
+                // Popup menu untuk backup dan sortir
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert, color: Colors.black),
                   onSelected: (value) async {
                     if (value == 'backup') {
-                      //print('📦 Cadangkan data');
                       Navigator.pushNamed(context, '/backup');
                     } else if (value == 'sort') {
-                      // ⬇️ Tampilkan submenu sortir
+                      // Tampilkan submenu sortir
                       final RenderBox overlay =
                           Overlay.of(context).context.findRenderObject()
                               as RenderBox;
@@ -486,13 +515,13 @@ class _HomePageState extends State<HomePage> {
                           0,
                         ),
                         items: [
+                          // Opsi sortir terbaru
                           PopupMenuItem(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_latest',
                             child: IntrinsicWidth(
-                              // Gunakan IntrinsicWidth untuk menghindari overflow
                               child: SizedBox(
-                                width: 220, // Atur sesuai kebutuhan
+                                width: 220,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -505,21 +534,20 @@ class _HomePageState extends State<HomePage> {
                                         fontSize: 16,
                                       ),
                                       overflow:
-                                          TextOverflow
-                                              .visible, // Pastikan teks bisa tampil penuh
+                                          TextOverflow.visible,
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
+                          // Opsi sortir terlama
                           PopupMenuItem(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_oldest',
                             child: IntrinsicWidth(
-                              // Gunakan IntrinsicWidth untuk menghindari overflow
                               child: SizedBox(
-                                width: 220, // Atur sesuai kebutuhan
+                                width: 220,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -532,20 +560,20 @@ class _HomePageState extends State<HomePage> {
                                         fontSize: 16,
                                       ),
                                       overflow:
-                                          TextOverflow
-                                              .visible, // Pastikan teks bisa tampil penuh
+                                          TextOverflow.visible,
                                     ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
+                          // Opsi sortir judul
                           PopupMenuItem(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             value: 'sort_title',
                             child: IntrinsicWidth(
                               child: SizedBox(
-                                width: 220, // Atur sesuai kebutuhan
+                                width: 220,
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
@@ -558,8 +586,7 @@ class _HomePageState extends State<HomePage> {
                                         fontSize: 16,
                                       ),
                                       overflow:
-                                          TextOverflow
-                                              .visible, // Pastikan teks bisa tampil penuh
+                                          TextOverflow.visible,
                                     ),
                                   ],
                                 ),
@@ -574,6 +601,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                       );
 
+                      // Terapkan sortir sesuai pilihan
                       if (result == 'sort_latest') {
                         setState(() {
                           filteredEntries.sort(
@@ -597,6 +625,7 @@ class _HomePageState extends State<HomePage> {
                   },
                   itemBuilder:
                       (context) => [
+                        // Menu backup data
                         PopupMenuItem(
                           value: 'backup',
                           child: Text(
@@ -607,6 +636,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                         ),
+                        // Menu sortir (akan memunculkan dialog sortir)
                         PopupMenuItem(
                           onTap:
                               () => Future.delayed(
@@ -634,6 +664,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+      // Drawer menu samping
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,

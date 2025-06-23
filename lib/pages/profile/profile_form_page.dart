@@ -1,11 +1,9 @@
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
+// Widget utama halaman form profil
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
 
@@ -13,47 +11,49 @@ class ProfileFormPage extends StatefulWidget {
   State<ProfileFormPage> createState() => _ProfileFormPageState();
 }
 
-bool _hovering = false;
-
+// State dari halaman ProfileFormPage
 class _ProfileFormPageState extends State<ProfileFormPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _supabase = Supabase.instance.client;
+  final _formKey = GlobalKey<FormState>(); // Key untuk validasi form
+  final _supabase = Supabase.instance.client; // Instance Supabase untuk akses database dan storage
 
+  // Controller untuk input field
   final _emailController = TextEditingController();
   final _namaController = TextEditingController();
   final _ttlController = TextEditingController();
   final _alamatController = TextEditingController();
   final _statusController = TextEditingController();
 
-  String? _fotoUrl;
-  String? _uploadedFotoUrl;
-  bool _isLoading = false;
+  String? _fotoUrl; // URL foto profil yang dipilih/diupload
+  String? _uploadedFotoUrl; // URL foto profil yang diupload (tidak selalu digunakan)
+  bool _isLoading = false; // Status loading saat proses simpan
 
   @override
   void initState() {
     super.initState();
     final user = _supabase.auth.currentUser;
     if (user != null) {
-      _emailController.text = user.email ?? '';
+      _emailController.text = user.email ?? ''; // Set email dari user login
     }
-    _loadUserData();
+    _loadUserData(); // Ambil data profil user dari database
   }
 
+  // Fungsi untuk mengambil data profil user dari Supabase
   Future<void> _loadUserData() async {
     final user = _supabase.auth.currentUser;
     if (user != null) {
       _emailController.text = user.email ?? '';
 
       try {
+        // Query data profil user berdasarkan id user
         final response =
             await _supabase
                 .from('user_profiles')
                 .select()
                 .eq('id', user.id)
                 .single();
-        //.maybeSingle(); // Gunakan maybeSingle agar tidak error jika tidak ada data
 
         if (response != null) {
+          // Set data ke controller dan state
           _namaController.text = response['nama_lengkap'] ?? '';
           _ttlController.text = response['tempat_tanggal_lahir'] ?? '';
           _alamatController.text = response['alamat'] ?? '';
@@ -65,6 +65,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           });
         }
       } catch (e) {
+        // Jika gagal ambil data, tampilkan snackbar error
         if (mounted) {
           showCustomSnackBar(
             context,
@@ -80,18 +81,19 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     print('Upload URL: $_uploadedFotoUrl');
   }
 
+  // Fungsi untuk menyimpan/update data profil ke Supabase
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return; // Validasi form
 
-    setState(() => _isLoading = true);
+    setState(() => _isLoading = true); // Tampilkan loading
 
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('User belum login');
 
+      // Data yang akan diupdate/insert ke tabel user_profiles
       final data = {
         'id': user.id,
-
         'email': _emailController.text.trim(),
         'nama_lengkap': _namaController.text.trim(),
         'tempat_tanggal_lahir': _ttlController.text.trim(),
@@ -100,9 +102,10 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         'foto_profil': _fotoUrl ?? '',
       };
 
-      await _supabase.from('user_profiles').upsert(data);
+      await _supabase.from('user_profiles').upsert(data); // Simpan ke database
 
       if (mounted) {
+        // Tampilkan notifikasi sukses dan kembali ke halaman sebelumnya
         showCustomSnackBar(
           context,
           'Profil berhasil disimpan',
@@ -114,6 +117,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         Navigator.pop(context);
       }
     } catch (e) {
+      // Tampilkan notifikasi error jika gagal simpan
       showCustomSnackBar(
         context,
         'Gagal menyimpan: $e',
@@ -122,17 +126,19 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         showAtTop: true,
       );
     } finally {
-      setState(() => _isLoading = false);
+      setState(() => _isLoading = false); // Sembunyikan loading
     }
   }
 
+  // Fungsi untuk upload foto profil ke Supabase Storage
   Future<void> _uploadFotoProfil() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(source: ImageSource.gallery); // Pilih gambar dari galeri
     if (picked == null) return;
 
-    final fileExt = picked.name.split('.').last.toLowerCase();
+    final fileExt = picked.name.split('.').last.toLowerCase(); // Ekstensi file
     if (!(fileExt == 'jpg' || fileExt == 'png')) {
+      // Validasi format file
       showCustomSnackBar(
         context,
         'Format file tidak didukung (hanya JPG/PNG)',
@@ -140,20 +146,20 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         duration: const Duration(seconds: 2),
         showAtTop: true,
       );
-
       return;
     }
 
     final user = _supabase.auth.currentUser;
     if (user == null) return;
 
-    final fileBytes = await picked.readAsBytes();
+    final fileBytes = await picked.readAsBytes(); // Baca file sebagai bytes
 
-    // ✅ Buat nama file dari timestamp saja
+    // Buat nama file unik berdasarkan timestamp
     final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
     final filePath = "${user.id}/$fileName";
 
     try {
+      // Upload file ke Supabase Storage
       await _supabase.storage
           .from('avatars')
           .uploadBinary(
@@ -162,6 +168,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
             fileOptions: const FileOptions(upsert: false),
           );
 
+      // Ambil public URL dari file yang diupload
       final publicUrl = _supabase.storage
           .from('avatars')
           .getPublicUrl(filePath);
@@ -170,14 +177,16 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       print('✅ Public URL: $publicUrl');
 
       setState(() {
-        _fotoUrl = publicUrl;
+        _fotoUrl = publicUrl; // Set URL foto profil
       });
 
+      // Update URL foto profil di database
       await _supabase
           .from('user_profiles')
           .update({'foto_profil': _fotoUrl})
           .eq('id', user.id);
 
+      // Tampilkan notifikasi sukses
       showCustomSnackBar(
         context,
         'Foto berhasil diunggah',
@@ -186,6 +195,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         showAtTop: true,
       );
     } catch (e) {
+      // Tampilkan notifikasi error jika gagal upload
       showCustomSnackBar(
         context,
         'Gagal upload foto: $e',
@@ -198,13 +208,16 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     }
   }
 
+  // Fungsi untuk mengambil daftar avatar yang sudah diupload user dari Supabase Storage
   Future<List<Map<String, String>>> _getUploadedAvatars() async {
     final user = _supabase.auth.currentUser;
     if (user == null) return [];
 
     try {
+      // Ambil daftar file di folder user pada storage 'avatars'
       final files = await _supabase.storage.from('avatars').list(path: user.id);
 
+      // Filter hanya file jpg/png
       final validFiles =
           files
               .where(
@@ -213,6 +226,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               )
               .toList();
 
+      // Mapping ke format {url, name}
       return validFiles.map((file) {
         final url = _supabase.storage
             .from('avatars')
@@ -225,7 +239,9 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
     }
   }
 
+  // Fungsi untuk menampilkan modal bottom sheet pemilih avatar
   Future<void> _showAvatarPicker() async {
+    // Daftar avatar default dari asset lokal
     final avatarAssets = [
       'assets/avatars/avatar1.png',
       'assets/avatars/avatar2.png',
@@ -239,17 +255,18 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       'assets/avatars/avatar10.png',
     ];
 
-    // Ambil avatar dari Supabase Storage
+    // Ambil avatar yang sudah diupload user
     final uploadedAvatars = await _getUploadedAvatars();
     print('📸 Avatar dari Supabase: $uploadedAvatars');
 
-    // Gabungkan semua avatar (upload + asset)
+    // Gabungkan avatar upload dan asset lokal
     final avatarList = [
       ...uploadedAvatars,
       ...avatarAssets.map((asset) => {'url': asset, 'name': ''}),
     ];
     print('📦 Total avatar: ${avatarList.length}');
 
+    // Tampilkan modal bottom sheet
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -265,7 +282,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
               const Text('Pilih Avatar', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 12),
 
-              // GridView avatar
+              // GridView untuk menampilkan daftar avatar
               SizedBox(
                 height: 250,
                 child: GridView.builder(
@@ -280,23 +297,25 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     final mapData = data as Map<String, String>;
                     final path = mapData['url']!;
                     final fileName = mapData['name']!;
-                    final isUrl = path.startsWith('http');
+                    final isUrl = path.startsWith('http'); // Cek apakah avatar dari storage atau asset
 
                     return Stack(
                       alignment: Alignment.topRight,
                       children: [
+                        // Widget avatar (bisa dari network atau asset)
                         GestureDetector(
                           onTap: () async {
                             setState(() {
-                              _fotoUrl = path;
+                              _fotoUrl = path; // Set avatar yang dipilih
                             });
 
+                            // Update foto profil di database
                             await _supabase
                                 .from('user_profiles')
                                 .update({'foto_profil': _fotoUrl})
                                 .eq('id', _supabase.auth.currentUser!.id);
 
-                            Navigator.pop(context);
+                            Navigator.pop(context); // Tutup modal
                           },
                           child: CircleAvatar(
                             backgroundImage:
@@ -310,7 +329,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                           ),
                         ),
 
-                        // 🗑️ Tampilkan tombol hapus hanya untuk URL Supabase
+                        // Tombol hapus hanya muncul untuk avatar dari Supabase Storage
                         if (isUrl)
                           Positioned(
                             top: -4,
@@ -331,6 +350,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                                 print("🧾 Hapus file di Supabase: $filePath");
 
                                 try {
+                                  // Hapus file dari Supabase Storage
                                   final result = await _supabase.storage
                                       .from('avatars')
                                       .remove([filePath]);
@@ -339,7 +359,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
                                   if (result.isNotEmpty) {
                                     setState(() {
-                                      _fotoUrl = null;
+                                      _fotoUrl = null; // Reset foto profil jika dihapus
                                     });
                                     showCustomSnackBar(
                                       context,
@@ -349,9 +369,10 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                                       showAtTop: true,
                                     );
 
-                                    Navigator.pop(context);
-                                    await _showAvatarPicker(); // refresh daftar
+                                    Navigator.pop(context); // Tutup modal
+                                    await _showAvatarPicker(); // Refresh daftar avatar
                                   } else {
+                                    // Jika gagal hapus, tampilkan error
                                     showCustomSnackBar(
                                       context,
                                       'Gagal menghapus avatar',
@@ -374,7 +395,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
               const SizedBox(height: 16),
 
-              // Tombol Upload Avatar
+              // Tombol untuk upload avatar baru dari galeri
               TextButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
@@ -394,6 +415,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
   @override
   void dispose() {
+    // Dispose semua controller untuk menghindari memory leak
     _emailController.dispose();
     _namaController.dispose();
     _ttlController.dispose();
@@ -404,6 +426,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Tentukan image provider untuk avatar (network atau asset)
     ImageProvider avatarImage;
 
     if (_fotoUrl == null || _fotoUrl!.isEmpty) {
@@ -421,6 +444,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           key: _formKey,
           child: ListView(
             children: [
+              // Widget avatar, bisa di-tap untuk memilih avatar
               GestureDetector(
                 onTap: () async {
                   await _showAvatarPicker();
@@ -457,12 +481,14 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 ),
               ),
 
+              // Tombol untuk upload foto profil dari galeri
               ElevatedButton.icon(
                 onPressed: _uploadFotoProfil,
                 icon: const Icon(Icons.image),
                 label: const Text('Unggah Foto Profil'),
               ),
               const SizedBox(height: 16),
+              // Field email (readonly)
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(labelText: 'Email'),
@@ -470,6 +496,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                 readOnly: true,
               ),
               const SizedBox(height: 12),
+              // Field nama lengkap
               TextFormField(
                 controller: _namaController,
                 decoration: const InputDecoration(labelText: 'Nama Lengkap'),
@@ -480,6 +507,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                             : null,
               ),
               const SizedBox(height: 12),
+              // Field tempat & tanggal lahir
               TextFormField(
                 controller: _ttlController,
                 decoration: const InputDecoration(
@@ -492,6 +520,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                             : null,
               ),
               const SizedBox(height: 12),
+              // Field alamat
               TextFormField(
                 controller: _alamatController,
                 decoration: const InputDecoration(labelText: 'Alamat'),
@@ -502,6 +531,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                             : null,
               ),
               const SizedBox(height: 12),
+              // Field status
               TextFormField(
                 controller: _statusController,
                 decoration: const InputDecoration(
@@ -514,6 +544,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                             : null,
               ),
               const SizedBox(height: 24),
+              // Tombol simpan profil
               ElevatedButton(
                 onPressed: _isLoading ? null : _submit,
                 child:

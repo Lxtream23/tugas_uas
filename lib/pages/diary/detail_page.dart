@@ -1,13 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:intl/intl.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:palette_generator/palette_generator.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:tugas_uas/widgets/custom_snackbar.dart';
+import 'package:flutter/material.dart'; // Paket UI utama Flutter
+import 'package:supabase_flutter/supabase_flutter.dart'; // Untuk koneksi ke Supabase (backend)
+import 'package:intl/intl.dart'; // Untuk format tanggal
+import 'package:google_fonts/google_fonts.dart'; // Untuk menggunakan font Google
+import 'package:palette_generator/palette_generator.dart'; // Untuk mengambil warna dominan dari gambar
+import 'package:image_picker/image_picker.dart'; // Untuk memilih gambar dari galeri
+import 'dart:io'; // Untuk operasi file (khusus mobile)
+import 'package:flutter/foundation.dart'; // Untuk cek platform (web/mobile)
+import 'package:tugas_uas/widgets/custom_snackbar.dart'; // Widget custom snackbar
 
+// Halaman detail catatan harian (tambah/edit)
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
 
@@ -16,27 +17,31 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
+  // Controller untuk input judul
   final _titleController = TextEditingController();
+  // Controller untuk input isi utama
   final _contentController = TextEditingController();
+  // Controller untuk input isi di bawah gambar
   final _contentBelowController = TextEditingController();
 
+  // Instance Supabase untuk akses database dan storage
   final supabase = Supabase.instance.client;
-  bool _isLoading = false;
-  Map? _entry;
-  Map<String, dynamic>? _lastDeletedEntry;
-  String? _selectedEmoji; // null kalau belum dipilih
-  String? _selectedBackground; // null = default background
-  //String? _entryId;
-  Color _textColor = Colors.black; // Default text color
+  bool _isLoading = false; // Status loading saat simpan/hapus
+  Map? _entry; // Data catatan yang sedang diedit (null jika tambah baru)
+  Map<String, dynamic>? _lastDeletedEntry; // Untuk fitur undo hapus
+  String? _selectedEmoji; // Emoji yang dipilih
+  String? _selectedBackground; // Path background yang dipilih
+  Color _textColor = Colors.black; // Warna teks (otomatis menyesuaikan background)
 
-  List<File> _pickedImages = []; // List to store picked images
-  List<Uint8List> _pickedImagesBytes = []; // For web support
-  List<String> _uploadedImageUrls = []; // URLs of uploaded images
+  List<File> _pickedImages = []; // List gambar yang dipilih (mobile)
+  List<Uint8List> _pickedImagesBytes = []; // List gambar (web)
+  List<String> _uploadedImageUrls = []; // URL gambar yang sudah diupload ke Supabase
 
-  bool _isInitialized = false;
-  DateTime? _entryDate;
-  bool _isFavorite = false;
+  bool _isInitialized = false; // Untuk mencegah inisialisasi ulang
+  DateTime? _entryDate; // Tanggal catatan
+  bool _isFavorite = false; // Status favorit
 
+  // Controller animasi untuk tanggal
   late AnimationController _dateController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -45,9 +50,11 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    // Inisialisasi data jika belum
     if (!_isInitialized) {
       final args = ModalRoute.of(context)!.settings.arguments;
       if (args != null && args is Map) {
+        // Jika mode edit, ambil data dari argumen
         _entry = args;
         _titleController.text = _entry!['title'] ?? '';
         _contentController.text = _entry!['content'] ?? '';
@@ -58,46 +65,42 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 ? Colors.white
                 : Colors.black;
         _contentBelowController.text =
-            _entry?['content_below'] ?? ''; // Ambil content_below kalau ada
+            _entry?['content_below'] ?? '';
         _uploadedImageUrls =
             (_entry!['image_urls'] as List<dynamic>?)
                 ?.map((url) => url.toString())
                 .toList() ??
             [];
-
-        // Ambil tanggal entry, kalau tidak ada gunakan sekarang
         _entryDate =
             DateTime.tryParse(_entry!['created_at'] ?? '') ?? DateTime.now();
-        // Ambil status favorite, default false kalau tidak ada
         _isFavorite = _entry!['is_favorite'] ?? false;
       } else {
+        // Jika tambah baru
         _entryDate = DateTime.now();
-        _isFavorite = false; // default kalau entry baru
+        _isFavorite = false;
       }
       _isInitialized = true;
     }
 
+    // Setup animasi tanggal
     _dateController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
-
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _dateController, curve: Curves.easeOut));
-
     _fadeAnimation = CurvedAnimation(
       parent: _dateController,
       curve: Curves.easeIn,
     );
-
-    // Start the animation
     _dateController.forward();
   }
 
   @override
   void dispose() {
+    // Dispose controller untuk menghindari memory leak
     _titleController.dispose();
     _contentController.dispose();
     _contentBelowController.dispose();
@@ -105,6 +108,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Fungsi untuk menyimpan catatan (tambah/edit)
   Future<void> _saveEntry() async {
     setState(() => _isLoading = true);
 
@@ -112,6 +116,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     final content = _contentController.text.trim();
     final user = supabase.auth.currentUser;
 
+    // Validasi user login
     if (user == null) {
       showCustomSnackBar(
         context,
@@ -124,6 +129,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       return;
     }
 
+    // Validasi input tidak kosong
     if (title.isEmpty || content.isEmpty) {
       showCustomSnackBar(
         context,
@@ -137,6 +143,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
 
     try {
+      // Data yang akan disimpan
       final data = {
         'user_id': user.id,
         'title': title,
@@ -150,19 +157,19 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       };
 
       if (_entry == null) {
+        // Tambah baru
         await supabase.from('diary_entries').insert(data);
       } else {
+        // Edit, update data kecuali user_id & created_at
         final id = _entry?['id'];
         if (id == null) throw Exception('ID catatan tidak ditemukan');
-
         final updateData = Map.of(data);
         updateData.remove('user_id');
         updateData.remove('created_at');
-
         await supabase.from('diary_entries').update(updateData).eq('id', id);
       }
 
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, true); // Kembali ke halaman sebelumnya
     } catch (e) {
       showCustomSnackBar(
         context,
@@ -176,7 +183,9 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
+  // Fungsi untuk menghapus catatan
   Future<void> _deleteEntry() async {
+    // Konfirmasi hapus
     final confirm = await showDialog<bool>(
       context: context,
       builder:
@@ -202,10 +211,12 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     if (id == null) return;
 
     try {
+      // Simpan data terakhir untuk undo
       _lastDeletedEntry = Map<String, dynamic>.from(_entry!);
       await supabase.from('diary_entries').delete().eq('id', id);
 
       if (mounted) {
+        // Tampilkan snackbar dengan opsi undo
         showCustomSnackBar(
           context,
           'Catatan dihapus',
@@ -229,6 +240,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
+  // Fungsi untuk undo hapus catatan
   Future<void> _undoDelete() async {
     final userId = supabase.auth.currentUser?.id;
 
@@ -240,19 +252,17 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         duration: const Duration(seconds: 2),
         showAtTop: true,
       );
-
       return;
     }
 
     try {
+      // Insert ulang data yang dihapus
       await supabase.from('diary_entries').insert({
         'user_id': userId,
         'title': _lastDeletedEntry!['title'],
         'content': _lastDeletedEntry!['content'],
-        'emoji': _lastDeletedEntry!['emoji'], // kembalikan emoji kalau ada
-        'background':
-            _lastDeletedEntry!['background'] ??
-            '', // kembalikan background kalau ada
+        'emoji': _lastDeletedEntry!['emoji'],
+        'background': _lastDeletedEntry!['background'] ?? '',
         'text_color': _lastDeletedEntry!['text_color'] ?? 'black',
         'content_below': _lastDeletedEntry!['content_below'] ?? '',
         'image_urls': _lastDeletedEntry!['image_urls'] ?? [],
@@ -271,6 +281,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
+  // Menampilkan bottom sheet untuk memilih emoji
   void _showEmojiPicker() {
     showModalBottomSheet(
       context: context,
@@ -279,36 +290,8 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       ),
       builder: (context) {
         final emojis = [
-          '😀',
-          '😎',
-          '😊',
-          '😍',
-          '🤩',
-          '😢',
-          '😭',
-          '😡',
-          '🤔',
-          '😴',
-          '😇',
-          '🥳',
-          '🤯',
-          '😱',
-          '🤤',
-          '😬',
-          '🙄',
-          '😌',
-          '💀',
-          '👻',
-          '🤗',
-          '🥰',
-          '😅',
-          '🤪',
-          '😷',
-          '😤',
-          '🤫',
-          '🤮',
-          '😈',
-          '👽',
+          // Daftar emoji yang bisa dipilih
+          '😀','😎','😊','😍','🤩','😢','😭','😡','🤔','😴','😇','🥳','🤯','😱','🤤','😬','🙄','😌','💀','👻','🤗','🥰','😅','🤪','😷','😤','🤫','🤮','😈','👽',
         ];
         return Padding(
           padding: const EdgeInsets.all(16),
@@ -342,28 +325,19 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     );
   }
 
+  // Fungsi untuk mengubah angka bulan menjadi nama bulan Indonesia
   String _monthName(int month) {
     const bulan = [
       '',
-      'Januari',
-      'Februari',
-      'Maret',
-      'April',
-      'Mei',
-      'Juni',
-      'Juli',
-      'Agustus',
-      'September',
-      'Oktober',
-      'November',
-      'Desember',
+      'Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember',
     ];
     return bulan[month];
   }
 
+  // Menampilkan bottom sheet untuk memilih background
   void _showBackgroundPicker() {
     final backgrounds = [
-      // Daftar gambar background yang tersedia
+      // Daftar path gambar background
       'assets/bg_catatan/bg.jpeg',
       'assets/bg_catatan/bg1.jpeg',
       'assets/bg_catatan/bg2.jpeg',
@@ -452,7 +426,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 onTap: () async {
                   final imagePath = backgrounds[index];
 
-                  // Tampilkan loading dulu
+                  // Tampilkan loading
                   showDialog(
                     context: context,
                     barrierDismissible: false,
@@ -461,11 +435,11 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                             const Center(child: CircularProgressIndicator()),
                   );
 
+                  // Ambil warna dominan dari gambar
                   final imageProvider = AssetImage(imagePath);
                   final palette = await PaletteGenerator.fromImageProvider(
                     imageProvider,
                   );
-
                   final dominantColor =
                       palette.dominantColor?.color ?? Colors.white;
                   final luminance = dominantColor.computeLuminance();
@@ -490,6 +464,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     );
   }
 
+  // Fungsi untuk memilih gambar dari galeri dan upload ke Supabase Storage
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -504,11 +479,11 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
           duration: const Duration(seconds: 2),
           showAtTop: true,
         );
-
         return;
       }
       print(supabase.auth.currentUser);
 
+      // Nama file aman
       final safeName = pickedFile.name.replaceAll(
         RegExp(r'[^a-zA-Z0-9_\-\.]'),
         '',
@@ -518,6 +493,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       final fileBytes = await pickedFile.readAsBytes();
 
       try {
+        // Upload ke Supabase Storage
         final response = await storage.uploadBinary(
           fileName,
           fileBytes,
@@ -562,6 +538,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
+  // Fungsi untuk toggle status favorit catatan
   Future<void> _toggleFavorite() async {
     if (_entry != null && _entry!['id'] != null) {
       final newStatus = !(_entry!['is_favorite'] ?? false);
@@ -608,86 +585,13 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
-  // void _insertTextField() {
-  //   // Menyisipkan placeholder [text_field] di posisi kursor
-  //   final text = _contentController.text;
-  //   final selection = _contentController.selection;
-  //   const field = '\n[text_field]\n';
-  //   _contentController.text = text.replaceRange(
-  //     selection.start,
-  //     selection.end,
-  //     field,
-  //   );
-  //   _contentController.selection = TextSelection.collapsed(
-  //     offset: selection.start + field.length,
-  //   );
-  // }
-
-  // void _insertList() {
-  //   // Menyisipkan bullet list di posisi kursor
-  //   final text = _contentController.text;
-  //   final selection = _contentController.selection;
-  //   const list = '\n• Item 1\n• Item 2\n';
-  //   _contentController.text = text.replaceRange(
-  //     selection.start,
-  //     selection.end,
-  //     list,
-  //   );
-  //   _contentController.selection = TextSelection.collapsed(
-  //     offset: selection.start + list.length,
-  //   );
-  // }
-
-  // void _assignLabel() {
-  //   // Menyisipkan label/tag di posisi kursor
-  //   final text = _contentController.text;
-  //   final selection = _contentController.selection;
-  //   const label = '\n#label\n';
-  //   _contentController.text = text.replaceRange(
-  //     selection.start,
-  //     selection.end,
-  //     label,
-  //   );
-  //   _contentController.selection = TextSelection.collapsed(
-  //     offset: selection.start + label.length,
-  //   );
-  // }
-
-  // void _savePhoneNumber() {
-  //   // Menyisipkan placeholder nomor telepon di posisi kursor
-  //   final text = _contentController.text;
-  //   final selection = _contentController.selection;
-  //   const phone = '\n[phone: 08xxxxxxxxxx]\n';
-  //   _contentController.text = text.replaceRange(
-  //     selection.start,
-  //     selection.end,
-  //     phone,
-  //   );
-  //   _contentController.selection = TextSelection.collapsed(
-  //     offset: selection.start + phone.length,
-  //   );
-  // }
-
-  // void _recordAudio() {
-  //   // Menyisipkan placeholder audio di posisi kursor
-  //   final text = _contentController.text;
-  //   final selection = _contentController.selection;
-  //   const audio = '\n[audio]\n';
-  //   _contentController.text = text.replaceRange(
-  //     selection.start,
-  //     selection.end,
-  //     audio,
-  //   );
-  //   _contentController.selection = TextSelection.collapsed(
-  //     offset: selection.start + audio.length,
-  //   );
-  // }
+  // --- Fitur insert text, list, label, phone, audio (belum aktif) ---
 
   @override
   Widget build(BuildContext context) {
     print("Build tampilan emoji: $_selectedEmoji");
     return Scaffold(
-      //resizeToAvoidBottomInset: false,  // Agar tidak mengganggu tampilan saat keyboard muncul
+      // Scaffold utama halaman detail
       body: SafeArea(
         child: Column(
           children: [
@@ -846,6 +750,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                         ],
                       ),
                       const SizedBox(height: 8),
+                      // Input judul catatan
                       TextField(
                         controller: _titleController,
                         decoration: InputDecoration(
@@ -854,7 +759,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                             fontSize: 16,
                             color:
                                 _textColor?.withOpacity(0.6) ??
-                                Colors.black, // hint lebih transparan
+                                Colors.black,
                           ),
                           border: InputBorder.none,
                           isDense: true,
@@ -871,7 +776,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Render TextField untuk isi atas (selalu ada)
+                          // Input isi utama catatan
                           TextField(
                             controller: _contentController,
                             maxLines: null,
@@ -893,8 +798,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                           ),
                           const SizedBox(height: 8),
 
-                          // Render gambar + tombol hapus
-                          // Render gambar dari _uploadedImageUrls (URL dari Supabase Storage)
+                          // Render gambar yang sudah diupload
                           ..._uploadedImageUrls.asMap().entries.map((entry) {
                             final index = entry.key;
                             final url = entry.value;
@@ -945,6 +849,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                                     ),
                                   ),
                                 ),
+                                // Tombol hapus gambar
                                 Positioned(
                                   top: 10,
                                   right: 6,
@@ -973,7 +878,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                           }).toList(),
                           const SizedBox(height: 8),
 
-                          // Render content_below kalau ada gambar
+                          // Input isi di bawah gambar (jika ada gambar)
                           if ((_uploadedImageUrls.isNotEmpty ||
                                   _pickedImages.isNotEmpty ||
                                   _pickedImagesBytes.isNotEmpty) ||
@@ -1009,6 +914,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
           ],
         ),
       ),
+      // Bottom navigation bar untuk fitur tambahan
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -1025,14 +931,17 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
+            // Tombol pilih background
             IconButton(
               icon: const Icon(Icons.wallpaper, size: 24),
               onPressed: _showBackgroundPicker,
             ),
+            // Tombol upload gambar
             IconButton(
               icon: const Icon(Icons.image, size: 24),
               onPressed: _pickImage,
             ),
+            // Tombol favorit
             IconButton(
               icon: Icon(
                 (_entry?['is_favorite'] ?? false)
@@ -1046,10 +955,12 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
               ),
               onPressed: _toggleFavorite,
             ),
+            // Tombol pilih emoji
             IconButton(
               icon: const Icon(Icons.emoji_emotions, size: 24),
               onPressed: _showEmojiPicker,
             ),
+            // Tombol fitur text field (belum aktif)
             IconButton(
               icon: const Icon(Icons.text_fields, size: 24),
               onPressed: () {
@@ -1062,6 +973,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 );
               },
             ),
+            // Tombol fitur bullet list (belum aktif)
             IconButton(
               icon: const Icon(Icons.format_list_bulleted, size: 24),
               onPressed: () {
@@ -1074,6 +986,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 );
               },
             ),
+            // Tombol fitur label/tag (belum aktif)
             IconButton(
               icon: const Icon(Icons.label_outline, size: 24),
               onPressed: () {
@@ -1086,6 +999,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 );
               },
             ),
+            // Tombol fitur phone (belum aktif)
             IconButton(
               icon: const Icon(Icons.phone, size: 24),
               onPressed: () {
@@ -1098,6 +1012,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                 );
               },
             ),
+            // Tombol fitur rekam audio (belum aktif)
             IconButton(
               icon: const Icon(Icons.mic, size: 24),
               onPressed: () {
