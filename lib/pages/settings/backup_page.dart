@@ -11,6 +11,7 @@ import 'package:tugas_uas/services/google_drive_helper.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tugas_uas/alarm_callback.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -135,8 +136,12 @@ class _BackupPageState extends State<BackupPage> {
         children: [
           ListTile(
             leading: CircleAvatar(
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.g_mobiledata, size: 32),
+              backgroundColor: Colors.transparent,
+              child: SvgPicture.asset(
+                'assets/icons/google_icon.svg',
+                width: 32,
+                height: 32,
+              ),
             ),
             title: const Text('Backup ke Google Drive'),
             subtitle: Text(_email ?? 'Memuat email...'),
@@ -222,7 +227,7 @@ class _BackupPageState extends State<BackupPage> {
             subtitle: const Text(
               'Aktifkan backup otomatis untuk menghindari kelalaian dalam sinkronisasi diary',
             ),
-            secondary: const Icon(Icons.auto_awesome, color: Colors.amber),
+            //secondary: const Icon(Icons.auto, color: Colors.amber),
           ),
 
           const Divider(),
@@ -335,12 +340,4 @@ class _BackupPageState extends State<BackupPage> {
       },
     );
   }
-
-  // Helper untuk subtitle
-  // String _getBackupIntervalText() {
-  //   // Ambil dari state atau SharedPreferences → sesuaikan implementasi kamu
-  //   // Contoh:
-  //   final days = 3; // ganti dengan value dari SharedPreferences
-  //   return days > 0 ? 'Setiap $days hari' : 'Tidak aktif';
-  // }
 }
