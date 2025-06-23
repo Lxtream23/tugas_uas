@@ -24,6 +24,7 @@ class _BackupPageState extends State<BackupPage> {
   String? _email;
   DateTime? _lastSyncTime;
   Timer? _backupTimer;
+  int? _backupInterval;
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _BackupPageState extends State<BackupPage> {
     }
     _loadLastSyncTime();
     _setupPeriodicBackup();
+    _loadBackupInterval();
   }
 
   @override
@@ -114,6 +116,13 @@ class _BackupPageState extends State<BackupPage> {
         );
         await prefs.setString('last_sync', DateTime.now().toIso8601String());
       }
+    });
+  }
+
+  Future<void> _loadBackupInterval() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _backupInterval = prefs.getInt('backup_interval');
     });
   }
 
@@ -259,36 +268,47 @@ class _BackupPageState extends State<BackupPage> {
 
           ListTile(
             title: const Text('Pengingat Cadangan'),
-            subtitle: const Text('3 hari sekali'),
+            subtitle: Text(
+              _backupInterval != null
+                  ? 'Setiap $_backupInterval hari'
+                  : 'Tidak aktif',
+            ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () {
               showDialog(
                 context: context,
                 builder:
                     (_) => AlertDialog(
-                      title: const Text('pengingat interval'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            title: const Text('Setiap 1 hari'),
-                            onTap: () async {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setInt('backup_interval', 1);
-                              Navigator.pop(context);
-                            },
-                          ),
-                          ListTile(
-                            title: const Text('Setiap 3 hari'),
-                            onTap: () async {
-                              final prefs =
-                                  await SharedPreferences.getInstance();
-                              await prefs.setInt('backup_interval', 3);
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ],
+                      title: const Text('Pilih interval pengingat'),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: ListView(
+                          shrinkWrap: true,
+                          children: [
+                            _buildIntervalTile(1),
+                            _buildIntervalTile(3),
+                            _buildIntervalTile(7),
+                            _buildIntervalTile(14),
+                            _buildIntervalTile(30),
+                            ListTile(
+                              title: const Text('Matikan pengingat'),
+                              leading:
+                                  _backupInterval == null
+                                      ? const Icon(
+                                        Icons.check,
+                                        color: Colors.blue,
+                                      )
+                                      : null,
+                              onTap: () async {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.remove('backup_interval');
+                                await _loadBackupInterval();
+                                if (context.mounted) Navigator.pop(context);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
               );
@@ -298,4 +318,29 @@ class _BackupPageState extends State<BackupPage> {
       ),
     );
   }
+
+  // Tambahkan di bawah:
+  Widget _buildIntervalTile(int days) {
+    return ListTile(
+      title: Text('Setiap $days hari'),
+      leading:
+          _backupInterval == days
+              ? const Icon(Icons.check, color: Colors.blue)
+              : null,
+      onTap: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt('backup_interval', days);
+        await _loadBackupInterval();
+        if (context.mounted) Navigator.pop(context);
+      },
+    );
+  }
+
+  // Helper untuk subtitle
+  // String _getBackupIntervalText() {
+  //   // Ambil dari state atau SharedPreferences → sesuaikan implementasi kamu
+  //   // Contoh:
+  //   final days = 3; // ganti dengan value dari SharedPreferences
+  //   return days > 0 ? 'Setiap $days hari' : 'Tidak aktif';
+  // }
 }

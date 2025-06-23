@@ -77,22 +77,32 @@ class GoogleDriveHelper {
     required String fileName,
     required String jsonData,
   }) async {
-    // Gunakan access token dari SharedPreferences (simpan saat login)
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
-    if (token == null) return;
+    if (token == null || token.isEmpty) {
+      print('❌ Access token kosong atau tidak ada');
+      return;
+    }
 
     final uri = Uri.parse(
       'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
     );
 
-    final request = http.MultipartRequest('POST', uri);
-    request.headers['Authorization'] = 'Bearer $token';
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token';
 
-    request.fields['metadata'] = json.encode({
+    final metadata = json.encode({
       'name': fileName,
       'mimeType': 'application/json',
     });
+
+    request.files.add(
+      http.MultipartFile.fromString(
+        'metadata',
+        metadata,
+        contentType: MediaType('application', 'json'),
+      ),
+    );
 
     request.files.add(
       http.MultipartFile.fromString(
@@ -104,8 +114,11 @@ class GoogleDriveHelper {
     );
 
     final response = await request.send();
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      print('❌ Gagal upload background: ${response.statusCode}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('✅ Backup berhasil');
+    } else {
+      print('❌ Gagal upload: ${response.statusCode}');
     }
   }
 }

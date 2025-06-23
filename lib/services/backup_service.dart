@@ -146,6 +146,12 @@ class BackupService {
         'user_id': userId,
         'title': item['title'],
         'content': item['content'],
+        'content_below': item['content_below'],
+        'emoji': item['emoji'],
+        'background': item['background'],
+        'text_color': item['text_color'],
+        'image_url': item['image_url'],
+        'is_favorite': item['is_favorite'],
         'created_at': item['created_at'],
       });
     }
