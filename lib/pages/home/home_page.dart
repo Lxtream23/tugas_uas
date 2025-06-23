@@ -141,6 +141,7 @@ class _HomePageState extends State<HomePage> {
               'text_color': entry.textColor ?? 'black',
               'content_below': entry.contentBelow ?? '',
               'image_urls': entry.imageUrls ?? '',
+              'is_favorite': entry.isFavorite,
               'created_at': entry.createdAt.toIso8601String(),
             };
 
@@ -201,6 +202,7 @@ class _HomePageState extends State<HomePage> {
         'text_color': _lastDeletedEntry!.textColor ?? 'black',
         'content_below': _lastDeletedEntry!.contentBelow ?? '',
         'image_urls': _lastDeletedEntry!.imageUrls ?? '',
+        'is_favorite': _lastDeletedEntry!.isFavorite,
         'created_at': DateTime.now().toIso8601String(),
       });
       _fetchDiaryEntries();
@@ -348,6 +350,21 @@ class _HomePageState extends State<HomePage> {
     final sortBy = prefs.getString('sort_by') ?? 'terbaru';
     _applySort(sortBy);
   }
+
+  static const List<String> months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
+  ];
 
   @override
   void dispose() {
@@ -808,18 +825,91 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                           onDismissed: (_) => _deleteDiaryEntry(entry.id),
-                          child: Card(
-                            margin: const EdgeInsets.all(8),
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(16),
-                              title: Text(entry.title),
-                              subtitle: Text(entry.createdAt.toString()),
-                              onTap: () => _goToDetail(entry),
-                            ),
+                          child: Stack(
+                            children: [
+                              Card(
+                                margin: const EdgeInsets.all(8),
+                                elevation: 5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.all(16),
+                                  title: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text:
+                                                  '${entry.createdAt.day.toString().padLeft(2, '0')} ',
+                                              style: GoogleFonts.poppins(
+                                                fontSize:
+                                                    25, // Tanggal lebih besar
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  months[entry.createdAt.month -
+                                                          1]
+                                                      .toUpperCase(),
+                                              style: GoogleFonts.poppins(
+                                                fontSize:
+                                                    16, // Bulan lebih kecil
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        entry.title,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Text(
+                                    entry.content,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  onTap: () => _goToDetail(entry),
+                                ),
+                              ),
+                              // Emoji - pojok kanan atas
+                              Positioned(
+                                top: 15,
+                                right: 20,
+                                child: Text(
+                                  entry.emoji,
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                              ),
+                              // Bintang favorit - di kiri dari emoji
+                              if (entry.isFavorite)
+                                Positioned(
+                                  top: 15,
+                                  right:
+                                      50, // Atur jarak biar lebih kiri dari emoji
+                                  child: Icon(
+                                    Icons.star,
+                                    color: Colors.yellow[700],
+                                  ),
+                                ),
+                            ],
                           ),
                         );
                       },

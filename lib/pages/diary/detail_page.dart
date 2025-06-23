@@ -34,6 +34,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
 
   bool _isInitialized = false;
   DateTime? _entryDate;
+  bool _isFavorite = false;
 
   late AnimationController _dateController;
   late Animation<Offset> _slideAnimation;
@@ -66,8 +67,11 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         // Ambil tanggal entry, kalau tidak ada gunakan sekarang
         _entryDate =
             DateTime.tryParse(_entry!['created_at'] ?? '') ?? DateTime.now();
+        // Ambil status favorite, default false kalau tidak ada
+        _isFavorite = _entry!['is_favorite'] ?? false;
       } else {
         _entryDate = DateTime.now();
+        _isFavorite = false; // default kalau entry baru
       }
       _isInitialized = true;
     }
@@ -474,20 +478,43 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     }
   }
 
-  void _toggleFavorite() {
-    // Toggle status favorit pada _entry (misal: tambahkan field is_favorite)
-    setState(() {
-      if (_entry != null) {
-        _entry!['is_favorite'] = !(_entry!['is_favorite'] ?? false);
-      } else {
-        // Untuk entry baru, bisa tampilkan pesan atau simpan status lokal
+  Future<void> _toggleFavorite() async {
+    if (_entry != null && _entry!['id'] != null) {
+      final newStatus = !(_entry!['is_favorite'] ?? false);
+      setState(() {
+        _entry!['is_favorite'] = newStatus;
+      });
+
+      try {
+        await Supabase.instance.client
+            .from('diary_entries')
+            .update({'is_favorite': newStatus})
+            .eq('id', _entry!['id']);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Favorit hanya untuk catatan yang sudah disimpan'),
+          SnackBar(
+            content: Text(
+              newStatus ? 'Ditandai sebagai favorit' : 'Dihapus dari favorit',
+            ),
           ),
         );
+      } catch (e) {
+        // Revert jika gagal
+        setState(() {
+          _entry!['is_favorite'] = !newStatus;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal mengupdate favorit. Coba lagi!')),
+        );
       }
-    });
+    } else {
+      // Entry belum disimpan ke DB
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Favorit hanya untuk catatan yang sudah disimpan'),
+        ),
+      );
+    }
   }
 
   void _insertTextField() {
@@ -929,7 +956,16 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
               onPressed: _pickImage,
             ),
             IconButton(
-              icon: const Icon(Icons.star_border, size: 24),
+              icon: Icon(
+                (_entry?['is_favorite'] ?? false)
+                    ? Icons.star
+                    : Icons.star_border,
+                color:
+                    (_entry?['is_favorite'] ?? false)
+                        ? Colors.yellow[700]
+                        : Colors.grey,
+                size: 24,
+              ),
               onPressed: _toggleFavorite,
             ),
             IconButton(

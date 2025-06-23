@@ -8,6 +8,7 @@ class DiaryEntry {
   final String? textColor; // Tambahkan field textColor
   final String? contentBelow; // Tambahkan field contentBelow
   final List<String>? imageUrls; // Tambahkan field imageUrl
+  final bool isFavorite; // Tambahkan field isFavorite
   final DateTime createdAt; // Tambahkan field createdAt
   final DateTime? updatedAt; // Tambahkan field updatedAt
 
@@ -21,6 +22,7 @@ class DiaryEntry {
     this.textColor, // Tambahkan textColor sebagai parameter opsional
     this.contentBelow, // Tambahkan contentBelow sebagai parameter opsional
     this.imageUrls, // Tambahkan imageUrl sebagai parameter opsional
+    required this.isFavorite, // Tambahkan isFavorite sebagai parameter
     required this.createdAt, // Tambahkan createdAt sebagai parameter
     this.updatedAt, // Tambahkan updatedAt sebagai parameter opsional
   });
@@ -46,6 +48,7 @@ class DiaryEntry {
                   .toList()
               : [],
       // Ambil image_url dari map
+      isFavorite: map['is_favorite'] ?? false, // Ambil is_favorite dari map
       createdAt: DateTime.parse(map['created_at']), // Ambil created_at dari map
       updatedAt:
           map['updated_at'] != null
@@ -68,6 +71,8 @@ class DiaryEntry {
       'content_below':
           contentBelow, // Sertakan content_below dalam map, jika null gunakan null
       'image_urls': imageUrls, // Sertakan image_url dalam map
+      'is_favorite':
+          isFavorite, // Sertakan is_favorite dalam map, jika null gunakan false
       'created_at':
           createdAt.toIso8601String(), // Sertakan created_at dalam map
       'updated_at':
