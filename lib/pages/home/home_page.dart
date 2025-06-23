@@ -670,27 +670,39 @@ class _HomePageState extends State<HomePage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Menu'),
+            DrawerHeader(
+              decoration: const BoxDecoration(color: Colors.blue),
+              child: Text(
+                'Menu',
+                style: GoogleFonts.poppins(color: Colors.white, fontSize: 24),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.person),
-              title: const Text('Profile'),
+              title: Text(
+                'Profile',
+                style: GoogleFonts.poppins(color: Colors.black, fontSize: 18),
+              ),
               onTap: () {
                 Navigator.pushNamed(context, '/profile-form');
               },
             ),
             ListTile(
               leading: const Icon(Icons.settings),
-              title: const Text('Pengaturan'),
+              title: Text(
+                'Pengaturan',
+                style: GoogleFonts.poppins(color: Colors.black, fontSize: 18),
+              ),
               onTap: () {
                 Navigator.pushNamed(context, '/settings');
               },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
-              title: const Text('Keluar'),
+              title: Text(
+                'Keluar',
+                style: GoogleFonts.poppins(color: Colors.black, fontSize: 18),
+              ),
               onTap: () async {
                 await supabase.auth.signOut();
                 Navigator.pushReplacementNamed(context, '/login');
