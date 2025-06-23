@@ -14,7 +14,10 @@ class ProfileFormPage extends StatefulWidget {
 // State dari halaman ProfileFormPage
 class _ProfileFormPageState extends State<ProfileFormPage> {
   final _formKey = GlobalKey<FormState>(); // Key untuk validasi form
-  final _supabase = Supabase.instance.client; // Instance Supabase untuk akses database dan storage
+  final _supabase =
+      Supabase
+          .instance
+          .client; // Instance Supabase untuk akses database dan storage
 
   // Controller untuk input field
   final _emailController = TextEditingController();
@@ -24,7 +27,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   final _statusController = TextEditingController();
 
   String? _fotoUrl; // URL foto profil yang dipilih/diupload
-  String? _uploadedFotoUrl; // URL foto profil yang diupload (tidak selalu digunakan)
+  String?
+  _uploadedFotoUrl; // URL foto profil yang diupload (tidak selalu digunakan)
   bool _isLoading = false; // Status loading saat proses simpan
 
   @override
@@ -133,7 +137,9 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   // Fungsi untuk upload foto profil ke Supabase Storage
   Future<void> _uploadFotoProfil() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery); // Pilih gambar dari galeri
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+    ); // Pilih gambar dari galeri
     if (picked == null) return;
 
     final fileExt = picked.name.split('.').last.toLowerCase(); // Ekstensi file
@@ -243,6 +249,7 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
   Future<void> _showAvatarPicker() async {
     // Daftar avatar default dari asset lokal
     final avatarAssets = [
+      'assets/avatars/avatar.png',
       'assets/avatars/avatar1.png',
       'assets/avatars/avatar2.png',
       'assets/avatars/avatar3.png',
@@ -252,7 +259,6 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       'assets/avatars/avatar7.png',
       'assets/avatars/avatar8.png',
       'assets/avatars/avatar9.png',
-      'assets/avatars/avatar10.png',
     ];
 
     // Ambil avatar yang sudah diupload user
@@ -297,7 +303,9 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                     final mapData = data as Map<String, String>;
                     final path = mapData['url']!;
                     final fileName = mapData['name']!;
-                    final isUrl = path.startsWith('http'); // Cek apakah avatar dari storage atau asset
+                    final isUrl = path.startsWith(
+                      'http',
+                    ); // Cek apakah avatar dari storage atau asset
 
                     return Stack(
                       alignment: Alignment.topRight,
@@ -359,7 +367,8 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
                                   if (result.isNotEmpty) {
                                     setState(() {
-                                      _fotoUrl = null; // Reset foto profil jika dihapus
+                                      _fotoUrl =
+                                          null; // Reset foto profil jika dihapus
                                     });
                                     showCustomSnackBar(
                                       context,

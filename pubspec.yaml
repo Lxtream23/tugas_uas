@@ -107,6 +107,7 @@ dev_dependencies:
 flutter:
   assets:
     # assets avatars
+    - assets/avatars/avatar.png
     - assets/avatars/avatar1.png
     - assets/avatars/avatar2.png
     - assets/avatars/avatar3.png
@@ -116,7 +117,7 @@ flutter:
     - assets/avatars/avatar7.png
     - assets/avatars/avatar8.png
     - assets/avatars/avatar9.png
-    - assets/avatars/avatar10.png
+    
     # Daftar file gambar avatar yang digunakan di aplikasi.
 
     - assets/images/header_mountain.jpg

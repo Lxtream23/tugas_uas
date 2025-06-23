@@ -10,7 +10,8 @@ import '../../widgets/custom_snackbar.dart'; // Widget custom snackbar
 
 // Widget utama halaman Home
 class HomePage extends StatefulWidget {
-  final void Function(ThemeMode)? onThemeChanged; // Callback untuk mengubah tema
+  final void Function(ThemeMode)?
+  onThemeChanged; // Callback untuk mengubah tema
 
   const HomePage({Key? key, this.onThemeChanged}) : super(key: key);
 
@@ -23,10 +24,13 @@ class _HomePageState extends State<HomePage> {
   final supabase = Supabase.instance.client; // Inisialisasi client Supabase
   bool _isSearching = false; // Status apakah sedang mencari
   List<DiaryEntry> diaryEntries = []; // List semua catatan
-  List<DiaryEntry> filteredEntries = []; // List catatan yang sudah difilter (misal hasil pencarian)
-  final _searchController = TextEditingController(); // Controller untuk input pencarian
+  List<DiaryEntry> filteredEntries =
+      []; // List catatan yang sudah difilter (misal hasil pencarian)
+  final _searchController =
+      TextEditingController(); // Controller untuk input pencarian
   bool isLoading = true; // Status loading data
-  DiaryEntry? _lastDeletedEntry; // Menyimpan catatan terakhir yang dihapus (untuk undo)
+  DiaryEntry?
+  _lastDeletedEntry; // Menyimpan catatan terakhir yang dihapus (untuk undo)
   bool _showChallenge = true; // Status apakah tantangan ditampilkan
   int _challengeProgress = 1; // Progress tantangan menulis jurnal
 
@@ -446,12 +450,12 @@ class _HomePageState extends State<HomePage> {
                         controller: _searchController,
                         autofocus: true,
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 18,
                         ),
                         decoration: InputDecoration(
                           hintText: 'Cari catatan...',
-                          hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                          hintStyle: GoogleFonts.poppins(color: Colors.black),
                           border: InputBorder.none,
                         ),
                         onChanged: (_) => _onSearchChanged(),
@@ -533,8 +537,7 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.black,
                                         fontSize: 16,
                                       ),
-                                      overflow:
-                                          TextOverflow.visible,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ],
                                 ),
@@ -559,8 +562,7 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.black,
                                         fontSize: 16,
                                       ),
-                                      overflow:
-                                          TextOverflow.visible,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ],
                                 ),
@@ -585,8 +587,7 @@ class _HomePageState extends State<HomePage> {
                                         color: Colors.black,
                                         fontSize: 16,
                                       ),
-                                      overflow:
-                                          TextOverflow.visible,
+                                      overflow: TextOverflow.visible,
                                     ),
                                   ],
                                 ),
