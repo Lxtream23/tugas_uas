@@ -95,6 +95,7 @@ flutter:
     # asset logo
     - assets/logo/notexa_logo.svg
     # assets background catatan
+    - assets/bg_catatan/bg.jpeg
     - assets/bg_catatan/bg1.jpeg
     - assets/bg_catatan/bg2.jpeg 
     - assets/bg_catatan/bg3.jpeg
@@ -108,8 +109,60 @@ flutter:
     - assets/bg_catatan/bg11.jpeg
     - assets/bg_catatan/bg12.jpeg
     - assets/bg_catatan/bg13.jpeg
-
-  # The following line ensures that the Material Icons font is
+    - assets/bg_catatan/bg14.jpeg
+    - assets/bg_catatan/bg15.jpeg
+    - assets/bg_catatan/bg16.jpeg
+    - assets/bg_catatan/bg17.jpeg
+    - assets/bg_catatan/bg18.jpeg
+    - assets/bg_catatan/bg19.jpeg
+    - assets/bg_catatan/bg20.jpeg
+    - assets/bg_catatan/bg21.jpeg
+    - assets/bg_catatan/bg22.jpeg
+    - assets/bg_catatan/bg23.jpeg
+    - assets/bg_catatan/bg24.jpeg
+    - assets/bg_catatan/bg25.jpeg
+    - assets/bg_catatan/bg27.jpeg
+    - assets/bg_catatan/bg28.jpeg
+    - assets/bg_catatan/bg29.jpeg
+    - assets/bg_catatan/bg30.jpeg
+    - assets/bg_catatan/bg31.jpeg
+    - assets/bg_catatan/bg32.jpeg
+    - assets/bg_catatan/bg33.jpeg
+    - assets/bg_catatan/bg34.jpeg
+    - assets/bg_catatan/bg35.jpeg
+    - assets/bg_catatan/bg36.jpeg
+    - assets/bg_catatan/bg37.jpeg
+    - assets/bg_catatan/bg38.jpeg
+    - assets/bg_catatan/bg39.jpeg
+    - assets/bg_catatan/bg40.jpeg
+    - assets/bg_catatan/bg41.jpeg
+    - assets/bg_catatan/bg42.jpeg
+    - assets/bg_catatan/bg43.jpeg
+    - assets/bg_catatan/bg44.jpeg
+    - assets/bg_catatan/bg45.jpeg
+    - assets/bg_catatan/bg46.jpeg
+    - assets/bg_catatan/bg47.jpeg
+    - assets/bg_catatan/bg48.jpeg
+    - assets/bg_catatan/bg49.jpeg
+    - assets/bg_catatan/bg50.jpeg
+    - assets/bg_catatan/bg51.jpeg
+    - assets/bg_catatan/bg52.jpeg
+    - assets/bg_catatan/bg53.jpeg
+    - assets/bg_catatan/bg54.jpeg
+    - assets/bg_catatan/bg55.jpeg
+    - assets/bg_catatan/bg56.jpeg
+    - assets/bg_catatan/bg57.jpeg
+    - assets/bg_catatan/bg58.jpeg
+    - assets/bg_catatan/bg59.jpeg
+    - assets/bg_catatan/bg60.jpeg
+    - assets/bg_catatan/bg61.jpeg
+    - assets/bg_catatan/bg62.jpeg
+    - assets/bg_catatan/bg63.jpeg
+    - assets/bg_catatan/bg64.jpeg
+    - assets/bg_catatan/bg65.jpeg
+    
+      
+        # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
