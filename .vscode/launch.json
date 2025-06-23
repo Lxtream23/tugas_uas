@@ -19,7 +19,8 @@
             "name": "tugas_uas (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "args": ["-d", "chrome", "--web-port=62976"]
         },
         {
             "name": "Flutter Web (Chrome fixed port)",
