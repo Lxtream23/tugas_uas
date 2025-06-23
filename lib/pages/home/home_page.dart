@@ -329,19 +329,24 @@ class _HomePageState extends State<HomePage> {
   void _applySort(String sortBy) {
     setState(() {
       _sortBy = sortBy;
-      filteredEntries = [...diaryEntries];
 
-      if (sortBy == 'terbaru') {
-        filteredEntries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      } else if (sortBy == 'terlama') {
-        filteredEntries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-      } else if (sortBy == 'judul') {
-        filteredEntries.sort((a, b) => a.title.compareTo(b.title));
-      }
-    });
+      filteredEntries.sort((a, b) {
+        // Prioritaskan favorit
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
 
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setString('sort_by', sortBy);
+        // Kalau dua-duanya sama status favoritnya, urutkan sesuai sortBy
+        switch (sortBy) {
+          case 'terbaru':
+            return b.createdAt.compareTo(a.createdAt);
+          case 'terlama':
+            return a.createdAt.compareTo(b.createdAt);
+          case 'judul':
+            return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+          default:
+            return 0;
+        }
+      });
     });
   }
 
