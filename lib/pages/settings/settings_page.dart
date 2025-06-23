@@ -254,11 +254,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                       ),
                                     );
                                   } catch (e) {
-                                    // ScaffoldMessenger.of(context).showSnackBar(
-                                    //   SnackBar(
-                                    //     content: Text('Gagal ubah email: $e'),
-                                    //   ),
-                                    // );
                                     showCustomSnackBar(
                                       context,
                                       'Gagal ubah email: $e',
@@ -301,13 +296,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                 final password =
                                     _passwordController.text.trim();
                                 if (password.length < 6) {
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   SnackBar(
-                                  //     content: Text(
-                                  //       'Password minimal 6 karakter',
-                                  //     ),
-                                  //   ),
-                                  // );
                                   showCustomSnackBar(
                                     context,
                                     'Password minimal 6 karakter',
@@ -320,14 +308,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   await _supabase.auth.updateUser(
                                     UserAttributes(password: password),
                                   );
-                                  // Navigator.pop(context);
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   SnackBar(
-                                  //     content: Text(
-                                  //       'Password berhasil diperbarui',
-                                  //     ),
-                                  //   ),
-                                  // );
+
                                   showCustomSnackBar(
                                     context,
                                     'Password berhasil diperbarui',
@@ -335,11 +316,6 @@ class _SettingsPageState extends State<SettingsPage> {
                                     showAtTop: true,
                                   );
                                 } catch (e) {
-                                  // ScaffoldMessenger.of(context).showSnackBar(
-                                  //   SnackBar(
-                                  //     content: Text('Gagal ubah password: $e'),
-                                  //   ),
-                                  // );
                                   showCustomSnackBar(
                                     context,
                                     'Gagal ubah password: $e',

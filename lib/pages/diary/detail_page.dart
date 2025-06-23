@@ -6,6 +6,7 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class DetailPage extends StatefulWidget {
   const DetailPage({super.key});
@@ -112,18 +113,24 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     final user = supabase.auth.currentUser;
 
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User tidak ditemukan. Silakan login ulang.'),
-        ),
+      showCustomSnackBar(
+        context,
+        'User tidak ditemukan. Silakan login ulang.',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
       setState(() => _isLoading = false);
       return;
     }
 
     if (title.isEmpty || content.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Judul dan isi tidak boleh kosong')),
+      showCustomSnackBar(
+        context,
+        'Judul dan isi tidak boleh kosong',
+        type: SnackBarType.warning,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
       setState(() => _isLoading = false);
       return;
@@ -157,9 +164,13 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
 
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan catatan: $e')));
+        'Gagal menyimpan catatan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -195,20 +206,26 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
       await supabase.from('diary_entries').delete().eq('id', id);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Catatan dihapus'),
-            action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
-            duration: const Duration(seconds: 5),
-          ),
+        showCustomSnackBar(
+          context,
+          'Catatan dihapus',
+          type: SnackBarType.warning,
+          actionLabel: 'Undo',
+          onActionPressed: _undoDelete,
+          duration: const Duration(seconds: 5),
+          showAtTop: true,
         );
 
         Navigator.pop(context, true); // kembali ke halaman sebelumnya
       }
     } catch (e) {
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
+        'Gagal menghapus catatan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
     }
   }
 
@@ -216,9 +233,14 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     final userId = supabase.auth.currentUser?.id;
 
     if (_lastDeletedEntry == null || userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal undo: pengguna tidak ditemukan')),
+      showCustomSnackBar(
+        context,
+        'Gagal undo: pengguna tidak ditemukan',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
+
       return;
     }
 
@@ -239,8 +261,12 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
 
       _lastDeletedEntry = null;
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengembalikan catatan: $e')),
+      showCustomSnackBar(
+        context,
+        'Gagal mengembalikan catatan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
     }
   }
@@ -314,11 +340,6 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
         );
       },
     );
-  }
-
-  String _formatDate(DateTime date) {
-    // Format sesuai kebutuhan, misal: 14 Juni 2025
-    return "${date.day} ${_monthName(date.month)} ${date.year}";
   }
 
   String _monthName(int month) {
@@ -476,11 +497,14 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     if (pickedFile != null) {
       final userId = supabase.auth.currentUser?.id;
       if (userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User tidak ditemukan, silakan login ulang'),
-          ),
+        showCustomSnackBar(
+          context,
+          'User tidak ditemukan, silakan login ulang',
+          type: SnackBarType.error,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
         );
+
         return;
       }
       print(supabase.auth.currentUser);
@@ -519,14 +543,21 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
           }
           _uploadedImageUrls.add(publicUrl);
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gambar berhasil diupload')),
+        showCustomSnackBar(
+          context,
+          'Gambar berhasil diupload',
+          type: SnackBarType.success,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
         );
       } catch (e) {
-        ScaffoldMessenger.of(
+        showCustomSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('Gagal upload gambar: $e')));
+          'Gagal upload gambar: $e',
+          type: SnackBarType.error,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
+        );
       }
     }
   }
@@ -544,91 +575,98 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             .update({'is_favorite': newStatus})
             .eq('id', _entry!['id']);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              newStatus ? 'Ditandai sebagai favorit' : 'Dihapus dari favorit',
-            ),
-          ),
+        showCustomSnackBar(
+          context,
+          newStatus ? 'Ditandai sebagai favorit' : 'Dihapus dari favorit',
+          type: SnackBarType.success,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
         );
       } catch (e) {
         // Revert jika gagal
         setState(() {
           _entry!['is_favorite'] = !newStatus;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal mengupdate favorit. Coba lagi!')),
+        showCustomSnackBar(
+          context,
+          'Gagal mengupdate favorit. Coba lagi!',
+          type: SnackBarType.error,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
         );
+        print('Error updating favorite status: $e');
       }
     } else {
       // Entry belum disimpan ke DB
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Favorit hanya untuk catatan yang sudah disimpan'),
-        ),
+      showCustomSnackBar(
+        context,
+        'Favorit hanya untuk catatan yang sudah disimpan',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
     }
   }
 
-  void _insertTextField() {
-    // Menyisipkan placeholder [text_field] di posisi kursor
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    const field = '\n[text_field]\n';
-    _contentController.text = text.replaceRange(
-      selection.start,
-      selection.end,
-      field,
-    );
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + field.length,
-    );
-  }
+  // void _insertTextField() {
+  //   // Menyisipkan placeholder [text_field] di posisi kursor
+  //   final text = _contentController.text;
+  //   final selection = _contentController.selection;
+  //   const field = '\n[text_field]\n';
+  //   _contentController.text = text.replaceRange(
+  //     selection.start,
+  //     selection.end,
+  //     field,
+  //   );
+  //   _contentController.selection = TextSelection.collapsed(
+  //     offset: selection.start + field.length,
+  //   );
+  // }
 
-  void _insertList() {
-    // Menyisipkan bullet list di posisi kursor
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    const list = '\n• Item 1\n• Item 2\n';
-    _contentController.text = text.replaceRange(
-      selection.start,
-      selection.end,
-      list,
-    );
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + list.length,
-    );
-  }
+  // void _insertList() {
+  //   // Menyisipkan bullet list di posisi kursor
+  //   final text = _contentController.text;
+  //   final selection = _contentController.selection;
+  //   const list = '\n• Item 1\n• Item 2\n';
+  //   _contentController.text = text.replaceRange(
+  //     selection.start,
+  //     selection.end,
+  //     list,
+  //   );
+  //   _contentController.selection = TextSelection.collapsed(
+  //     offset: selection.start + list.length,
+  //   );
+  // }
 
-  void _assignLabel() {
-    // Menyisipkan label/tag di posisi kursor
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    const label = '\n#label\n';
-    _contentController.text = text.replaceRange(
-      selection.start,
-      selection.end,
-      label,
-    );
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + label.length,
-    );
-  }
+  // void _assignLabel() {
+  //   // Menyisipkan label/tag di posisi kursor
+  //   final text = _contentController.text;
+  //   final selection = _contentController.selection;
+  //   const label = '\n#label\n';
+  //   _contentController.text = text.replaceRange(
+  //     selection.start,
+  //     selection.end,
+  //     label,
+  //   );
+  //   _contentController.selection = TextSelection.collapsed(
+  //     offset: selection.start + label.length,
+  //   );
+  // }
 
-  void _savePhoneNumber() {
-    // Menyisipkan placeholder nomor telepon di posisi kursor
-    final text = _contentController.text;
-    final selection = _contentController.selection;
-    const phone = '\n[phone: 08xxxxxxxxxx]\n';
-    _contentController.text = text.replaceRange(
-      selection.start,
-      selection.end,
-      phone,
-    );
-    _contentController.selection = TextSelection.collapsed(
-      offset: selection.start + phone.length,
-    );
-  }
+  // void _savePhoneNumber() {
+  //   // Menyisipkan placeholder nomor telepon di posisi kursor
+  //   final text = _contentController.text;
+  //   final selection = _contentController.selection;
+  //   const phone = '\n[phone: 08xxxxxxxxxx]\n';
+  //   _contentController.text = text.replaceRange(
+  //     selection.start,
+  //     selection.end,
+  //     phone,
+  //   );
+  //   _contentController.selection = TextSelection.collapsed(
+  //     offset: selection.start + phone.length,
+  //   );
+  // }
 
   // void _recordAudio() {
   //   // Menyisipkan placeholder audio di posisi kursor
@@ -829,20 +867,7 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      // TextField(
-                      //   controller: _contentController,
-                      //   maxLines: null,
-                      //   decoration: const InputDecoration(
-                      //     hintText: 'Tulis lebih banyak di sini...',
-                      //     border: InputBorder.none,
-                      //     isDense: true,
-                      //     contentPadding: EdgeInsets.zero,
-                      //   ),
-                      //   style: GoogleFonts.poppins(
-                      //     fontSize: 16,
-                      //     color: _textColor,
-                      //   ),
-                      // ),
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1027,15 +1052,63 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
             ),
             IconButton(
               icon: const Icon(Icons.text_fields, size: 24),
-              onPressed: _insertTextField,
+              onPressed: () {
+                showCustomSnackBar(
+                  context,
+                  'Fitur belum tersedia',
+                  type: SnackBarType.warning,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.format_list_bulleted, size: 24),
-              onPressed: _insertList,
+              onPressed: () {
+                showCustomSnackBar(
+                  context,
+                  'Fitur belum tersedia',
+                  type: SnackBarType.warning,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              },
             ),
             IconButton(
               icon: const Icon(Icons.label_outline, size: 24),
-              onPressed: _assignLabel,
+              onPressed: () {
+                showCustomSnackBar(
+                  context,
+                  'Fitur label belum tersedia',
+                  type: SnackBarType.warning,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.phone, size: 24),
+              onPressed: () {
+                showCustomSnackBar(
+                  context,
+                  'Fitur belum tersedia',
+                  type: SnackBarType.warning,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.mic, size: 24),
+              onPressed: () {
+                showCustomSnackBar(
+                  context,
+                  'Fitur rekam audio belum tersedia',
+                  type: SnackBarType.warning,
+                  duration: const Duration(seconds: 2),
+                  showAtTop: true,
+                );
+              },
             ),
           ],
         ),
@@ -1043,34 +1116,3 @@ class _DetailPageState extends State<DetailPage> with TickerProviderStateMixin {
     );
   }
 }
-// appBar: AppBar(
-      //   title: Text(_entry == null ? 'Tambah Catatan' : 'Edit Catatan'),
-
-      //   // actions: [
-      //   //   if (_entry != null)
-      //   //     IconButton(
-      //   //       icon: const Icon(Icons.delete),
-      //   //       tooltip: 'Hapus',
-      //   //       onPressed: _deleteEntry,
-      //   //     ),
-      //   // ],
-      // ),
-      // Tombol simpan
-            // SizedBox(
-            //   width: double.infinity,
-            //   child: ElevatedButton(
-            //     onPressed: _isLoading ? null : _saveEntry,
-            //     child:
-            //         _isLoading
-            //             ? const CircularProgressIndicator()
-            //             : Text(_entry == null ? 'Simpan' : 'Perbarui'),
-
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: const Color(0xFF6C63FF),
-            //       padding: const EdgeInsets.symmetric(vertical: 16),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(12),
-            //       ),
-            //     ),
-            //   ),
-            // ),

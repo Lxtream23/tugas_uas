@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tugas_uas/services/google_drive_helper.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class BackupService {
   /// Backup: Android/iOS → simpan ke file
@@ -37,8 +38,12 @@ class BackupService {
         html.Url.revokeObjectUrl(url);
 
         if (context != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ File berhasil diunduh')),
+          showCustomSnackBar(
+            context,
+            'File berhasil diunduh',
+            type: SnackBarType.success,
+            showAtTop: true,
+            duration: const Duration(seconds: 2),
           );
         }
         return null;
@@ -48,8 +53,12 @@ class BackupService {
         await file.writeAsString(jsonString);
 
         if (context != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('✅ File tersimpan di: ${file.path}')),
+          showCustomSnackBar(
+            context,
+            'File tersimpan di: ${file.path}',
+            type: SnackBarType.success,
+            showAtTop: true,
+            duration: const Duration(seconds: 2),
           );
         }
         return file;
@@ -57,9 +66,13 @@ class BackupService {
     } catch (e) {
       print('❌ Gagal backup: $e');
       if (context != null) {
-        ScaffoldMessenger.of(
+        showCustomSnackBar(
           context,
-        ).showSnackBar(SnackBar(content: Text('❌ Gagal backup: $e')));
+          'Gagal backup: $e',
+          type: SnackBarType.error,
+          showAtTop: true,
+          duration: const Duration(seconds: 2),
+        );
       }
       return null;
     }
@@ -98,9 +111,13 @@ class BackupService {
       await _uploadToSupabase(data, user.id, context);
     } catch (e) {
       print('❌ Gagal restore (mobile): $e');
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('❌ Gagal pulihkan: $e')));
+        'Gagal pulihkan: $e',
+        type: SnackBarType.error,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 
@@ -128,9 +145,13 @@ class BackupService {
       });
     } catch (e) {
       print('❌ Gagal restore (web): $e');
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('❌ Gagal pulihkan: $e')));
+        'Gagal pulihkan: $e',
+        type: SnackBarType.error,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 
@@ -155,10 +176,13 @@ class BackupService {
         'created_at': item['created_at'],
       });
     }
-
-    ScaffoldMessenger.of(
+    showCustomSnackBar(
       context,
-    ).showSnackBar(const SnackBar(content: Text('✅ Data berhasil dipulihkan')));
+      'Data berhasil dipulihkan',
+      type: SnackBarType.success,
+      showAtTop: true,
+      duration: const Duration(seconds: 2),
+    );
   }
 
   static Future<void> backgroundBackup() async {

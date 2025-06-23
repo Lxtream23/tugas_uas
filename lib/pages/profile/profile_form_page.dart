@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class ProfileFormPage extends StatefulWidget {
   const ProfileFormPage({super.key});
@@ -65,9 +66,13 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
+          showCustomSnackBar(
             context,
-          ).showSnackBar(SnackBar(content: Text('data profil kosong')));
+            'data profil kosong',
+            type: SnackBarType.error,
+            duration: const Duration(seconds: 2),
+            showAtTop: true,
+          );
         }
       }
     }
@@ -98,15 +103,24 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
       await _supabase.from('user_profiles').upsert(data);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profil berhasil disimpan')),
+        showCustomSnackBar(
+          context,
+          'Profil berhasil disimpan',
+          type: SnackBarType.success,
+          duration: const Duration(seconds: 2),
+          showAtTop: true,
         );
+
         Navigator.pop(context);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menyimpan: $e')));
+        'Gagal menyimpan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -119,11 +133,14 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
 
     final fileExt = picked.name.split('.').last.toLowerCase();
     if (!(fileExt == 'jpg' || fileExt == 'png')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Format file tidak didukung (hanya JPG/PNG)'),
-        ),
+      showCustomSnackBar(
+        context,
+        'Format file tidak didukung (hanya JPG/PNG)',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
+
       return;
     }
 
@@ -161,13 +178,22 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
           .update({'foto_profil': _fotoUrl})
           .eq('id', user.id);
 
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Foto berhasil diunggah')));
+        'Foto berhasil diunggah',
+        type: SnackBarType.success,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
     } catch (e) {
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal upload foto: $e')));
+        'Gagal upload foto: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
+
       print('Gagal upload foto: $e');
     }
   }
@@ -315,22 +341,23 @@ class _ProfileFormPageState extends State<ProfileFormPage> {
                                     setState(() {
                                       _fotoUrl = null;
                                     });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          '✅ Avatar berhasil dihapus',
-                                        ),
-                                      ),
+                                    showCustomSnackBar(
+                                      context,
+                                      'Avatar berhasil dihapus',
+                                      type: SnackBarType.success,
+                                      duration: const Duration(seconds: 2),
+                                      showAtTop: true,
                                     );
+
                                     Navigator.pop(context);
                                     await _showAvatarPicker(); // refresh daftar
                                   } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          '❌ Gagal menghapus avatar',
-                                        ),
-                                      ),
+                                    showCustomSnackBar(
+                                      context,
+                                      'Gagal menghapus avatar',
+                                      type: SnackBarType.error,
+                                      duration: const Duration(seconds: 2),
+                                      showAtTop: true,
                                     );
                                   }
                                 } catch (e) {

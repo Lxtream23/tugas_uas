@@ -12,6 +12,7 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tugas_uas/alarm_callback.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -207,20 +208,14 @@ class _BackupPageState extends State<BackupPage> {
                   await AndroidAlarmManager.cancel(0);
                 }
               }
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    val
-                        ? '✅ Backup otomatis diaktifkan'
-                        : '❌ Backup otomatis dimatikan',
-                  ),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
+              showCustomSnackBar(
+                context,
+                val
+                    ? 'Backup otomatis diaktifkan'
+                    : 'Backup otomatis dimatikan',
+                type: SnackBarType.success,
+                duration: const Duration(seconds: 2),
+                showAtTop: true,
               );
             },
             title: const Text('Backup otomatis'),

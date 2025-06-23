@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class GoogleDriveHelper {
   static final _googleSignIn = GoogleSignIn(
@@ -34,16 +35,22 @@ class GoogleDriveHelper {
 
       await driveApi.files.create(file, uploadMedia: media);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ File berhasil diunggah ke Google Drive'),
-        ),
+      showCustomSnackBar(
+        context,
+        'File berhasil diunggah ke Google Drive',
+        type: SnackBarType.success,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
       );
     } catch (e) {
       print('❌ Gagal upload: $e');
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('❌ Gagal upload: $e')));
+        'Gagal upload: $e',
+        type: SnackBarType.error,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
+      );
     }
   }
 }

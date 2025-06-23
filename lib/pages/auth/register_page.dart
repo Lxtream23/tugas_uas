@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tugas_uas/services/auth_service.dart'; // pastikan kamu punya file ini
 import 'package:tugas_uas/pages/auth/login_page.dart'; // tambahkan ini untuk LoginPage
+import 'package:tugas_uas/widgets/custom_snackbar.dart'; // pastikan kamu punya custom
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -70,9 +71,13 @@ class _RegisterPageState extends State<RegisterPage>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
+    showCustomSnackBar(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+      message,
+      type: SnackBarType.error,
+      duration: const Duration(seconds: 2),
+      showAtTop: true,
+    );
   }
 
   Route _createRouteToLogin() {

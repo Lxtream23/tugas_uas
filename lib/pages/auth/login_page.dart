@@ -4,6 +4,7 @@ import 'package:tugas_uas/services/auth_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:tugas_uas/pages/auth/register_page.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -33,9 +34,13 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           print('✅ Login berhasil: ${response.user?.email}');
           Navigator.pushReplacementNamed(context, '/home');
-          ScaffoldMessenger.of(
+          showCustomSnackBar(
             context,
-          ).showSnackBar(const SnackBar(content: Text("Login berhasil!")));
+            'Login berhasil!',
+            type: SnackBarType.success,
+            duration: const Duration(seconds: 2),
+            showAtTop: true,
+          );
         }
       }
     } on AuthException catch (e) {
@@ -48,9 +53,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(
+    showCustomSnackBar(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+      message,
+      type: SnackBarType.error,
+      duration: const Duration(seconds: 2),
+      showAtTop: true,
+    );
   }
 
   Route _createRouteToRegister() {

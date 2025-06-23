@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class AuthService {
   static final _supabase = Supabase.instance.client;
@@ -35,9 +36,14 @@ class AuthService {
 
         if (auth.idToken == null || auth.accessToken == null) {
           print('❌ Token Google null');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal mendapatkan token Google')),
+          showCustomSnackBar(
+            context,
+            'Gagal mendapatkan token Google',
+            type: SnackBarType.error,
+            showAtTop: true,
+            duration: const Duration(seconds: 2),
           );
+
           return;
         }
 
@@ -51,15 +57,23 @@ class AuthService {
           print('✅ Login Google berhasil: ${response.user?.email}');
           // Navigasi ke halaman utama setelah login
           Navigator.pushReplacementNamed(context, '/home');
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login menggunakan Google berhasil')),
+          showCustomSnackBar(
+            context,
+            'Login menggunakan Google berhasil',
+            type: SnackBarType.success,
+            showAtTop: true,
+            duration: const Duration(seconds: 2),
           );
         }
       }
     } catch (e) {
       print('❌ Login Google gagal: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login menggunakan Google gagal')),
+      showCustomSnackBar(
+        context,
+        'Login menggunakan Google gagal',
+        type: SnackBarType.error,
+        showAtTop: true,
+        duration: const Duration(seconds: 2),
       );
     }
   }

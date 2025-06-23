@@ -53,7 +53,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         _pinToNotification
             ? 'Pengingat saat ini disematkan'
             : 'Pengingat tidak disematkan',
-        type: SnackBarType.info,
+        type: SnackBarType.success,
         showAtTop: true,
         duration: const Duration(seconds: 2),
       );

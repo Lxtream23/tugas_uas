@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:tugas_uas/widgets/custom_snackbar.dart';
 
 class GoogleAuthClient extends http.BaseClient {
   final Map<String, String> _headers;
@@ -59,15 +60,23 @@ class GoogleDriveHelper {
       await driveApi.files.create(file, uploadMedia: media);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Backup berhasil ke Google Drive')),
+        showCustomSnackBar(
+          context,
+          'Backup berhasil ke Google Drive',
+          type: SnackBarType.success,
+          showAtTop: true,
+          duration: const Duration(seconds: 2),
         );
       }
     } catch (e) {
       debugPrint('❌ Gagal upload ke Google Drive: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Gagal upload ke Google Drive: $e')),
+        showCustomSnackBar(
+          context,
+          'Gagal upload ke Google Drive: $e',
+          type: SnackBarType.error,
+          showAtTop: true,
+          duration: const Duration(seconds: 2),
         );
       }
     }

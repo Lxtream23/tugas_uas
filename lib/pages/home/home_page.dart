@@ -5,6 +5,7 @@ import '../../models/diary_entry.dart';
 import '../../services/notification_service.dart';
 import '../../services/backup_service.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class HomePage extends StatefulWidget {
   final void Function(ThemeMode)? onThemeChanged;
@@ -81,8 +82,12 @@ class _HomePageState extends State<HomePage> {
       prefs.setString('last_backup_date', today);
 
       // (Opsional) Tampilkan notifikasi sukses
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Backup otomatis berhasil')),
+      showCustomSnackBar(
+        context,
+        'Backup otomatis berhasil',
+        type: SnackBarType.success,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
     }
   }
@@ -172,19 +177,24 @@ class _HomePageState extends State<HomePage> {
       await supabase.from('diary_entries').delete().eq('id', id);
       if (!mounted) return;
       _fetchDiaryEntries();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Catatan dihapus'),
-          action: SnackBarAction(label: 'Undo', onPressed: _undoDelete),
-          duration: const Duration(seconds: 5),
-        ),
+      showCustomSnackBar(
+        context,
+        'Catatan dihapus',
+        type: SnackBarType.warning,
+        actionLabel: 'Undo',
+        onActionPressed: _undoDelete,
+        duration: const Duration(seconds: 5),
+        showAtTop: true,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      showCustomSnackBar(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menghapus catatan: $e')));
+        'Gagal menghapus catatan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
+      );
     }
   }
 
@@ -208,8 +218,12 @@ class _HomePageState extends State<HomePage> {
       _fetchDiaryEntries();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengembalikan catatan: $e')),
+      showCustomSnackBar(
+        context,
+        'Gagal mengembalikan catatan: $e',
+        type: SnackBarType.error,
+        duration: const Duration(seconds: 2),
+        showAtTop: true,
       );
     }
   }
@@ -735,7 +749,15 @@ class _HomePageState extends State<HomePage> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.more_vert),
-                              onPressed: () {},
+                              onPressed: () {
+                                showCustomSnackBar(
+                                  context,
+                                  'Fitur belum tersedia',
+                                  type: SnackBarType.warning,
+                                  duration: const Duration(seconds: 2),
+                                  showAtTop: true,
+                                );
+                              },
                             ),
                           ],
                         ),
